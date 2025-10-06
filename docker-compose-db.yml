@@ -1,0 +1,37 @@
+
+services:
+  my-app-db:
+    container_name: "my-app-db"
+    image: postgres
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    volumes:
+      - "pgdata_volume:/var/lib/postgresql/data"
+    environment:
+      - "POSTGRES_DB=my-app-db"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_PASSWORD=root"
+    networks:
+      - app-network
+    
+  pgadmin:
+    container_name: "pgadmin"
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      - "PGADMIN_DEFAULT_EMAIL=dldnfud0789@naver.com"
+      - "PGADMIN_DEFAULT_PASSWORD=dldnfud012"
+    networks:
+      - app-network
+    depends_on:
+      - my-app-db
+
+volumes:
+  pgdata_volume:
+
+networks:
+  app-network:
+    driver: bridge

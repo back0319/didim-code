@@ -127,3 +127,4 @@ venv.bak/
 
 # Docker
 .dockerignore
+./pgdata

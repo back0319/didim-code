@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 
 interface Problem {
@@ -17,6 +18,7 @@ interface ProblemsPageProps {
 }
 
 export default function ProblemsPage({ problems }: ProblemsPageProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedDifficulty, setSelectedDifficulty] = useState('전체');
@@ -185,7 +187,10 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
                   </div>
 
                   {/* Action Button */}
-                  <button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                  <button 
+                    onClick={() => router.push(`/problems/${problem.id}`)}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
                     {problem.solved ? '다시 풀기' : '문제 풀기'}
                   </button>
                 </div>
@@ -212,67 +217,30 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async () => {
-  // 샘플 데이터 - 실제로는 API에서 가져옴
-  const problems: Problem[] = [
-    {
-      id: 1,
-      title: "Two Sum",
-      description: "정수 배열에서 두 수의 합이 target과 같은 인덱스를 찾는 문제입니다.",
-      difficulty: 'Easy',
-      category: 'Array',
-      solved: true,
-      acceptance_rate: 85
-    },
-    {
-      id: 2,
-      title: "Longest Substring Without Repeating Characters",
-      description: "반복되지 않는 가장 긴 부분 문자열의 길이를 구하는 문제입니다.",
-      difficulty: 'Medium',
-      category: 'String',
-      solved: false,
-      acceptance_rate: 62
-    },
-    {
-      id: 3,
-      title: "Median of Two Sorted Arrays",
-      description: "정렬된 두 배열의 중앙값을 O(log(m+n)) 시간에 구하는 문제입니다.",
-      difficulty: 'Hard',
-      category: 'Array',
-      solved: false,
-      acceptance_rate: 35
-    },
-    {
-      id: 4,
-      title: "Valid Parentheses",
-      description: "괄호가 올바르게 닫혀있는지 확인하는 문제입니다.",
-      difficulty: 'Easy',
-      category: 'String',
-      solved: true,
-      acceptance_rate: 78
-    },
-    {
-      id: 5,
-      title: "Binary Tree Inorder Traversal",
-      description: "이진 트리의 중위 순회를 구현하는 문제입니다.",
-      difficulty: 'Medium',
-      category: 'Tree',
-      solved: false,
-      acceptance_rate: 71
-    },
-    {
-      id: 6,
-      title: "Maximum Subarray",
-      description: "연속된 부분 배열의 최대 합을 구하는 문제입니다.",
-      difficulty: 'Easy',
-      category: 'Dynamic Programming',
-      solved: true,
-      acceptance_rate: 52
+  try {
+    // Docker 컨테이너의 API에서 데이터 가져오기 (3000번 포트)
+    const response = await fetch('http://localhost:3000/api/problems');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch problems: ${response.status}`);
     }
-  ];
+    
+    const problems: Problem[] = await response.json();
+    console.log('Fetched problems from Docker:', problems.length);
 
-  return {
-    props: {
-      problems
-    }
-  };
+    return {
+      props: {
+        problems
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching problems from Docker:', error);
+    
+    // 에러 발생 시 빈 배열 반환
+    return {
+      props: {
+        problems: []
+      }
+    };
+  }
 };

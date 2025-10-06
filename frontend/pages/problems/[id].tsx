@@ -1,0 +1,539 @@
+import { useState, useEffect } from 'react';
+import { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
+import Layout from '../../components/Layout';
+
+interface Problem {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: string;
+  paradigms: string[];
+  expected_complexity: string;
+}
+
+interface Solution {
+  id: number;
+  type: string;
+  code: string;
+  complexity: string;
+  explanation: string;
+}
+
+interface Feedback {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  code_suggestion?: string;
+  severity: 'info' | 'warning' | 'error';
+}
+
+interface SubmissionResult {
+  id: number;
+  verdict: string;
+  execution_time: number;
+  memory_usage: number;
+  feedback: Feedback[];
+}
+
+interface ProblemSolvePageProps {
+  problem: Problem | null;
+  solutions: Solution[];
+}
+
+export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePageProps) {
+  const router = useRouter();
+  const [code, setCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
+  const [showSolution, setShowSolution] = useState(false);
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // 파이썬 코드 템플릿
+  const codeTemplate = `def solution():
+    # 여기에 코드를 작성하세요
+    # 문제: ${problem?.title || ''}
+    # 예상 복잡도: ${problem?.expected_complexity || 'O(n)'}
+    # 적용 패러다임: ${problem?.paradigms?.join(', ') || ''}
+    pass
+
+# 예시 실행
+print(solution())`;
+
+  useEffect(() => {
+    if (problem) {
+      setCode(codeTemplate);
+    }
+  }, [problem]);
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'text-green-600 bg-green-50 border-green-200';
+      case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'Hard': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!code.trim()) {
+      alert('코드를 입력해주세요.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setIsAnalyzing(false);
+    
+    try {
+      // 1. 코드 제출 및 채점
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          problem_id: problem?.id,
+          code: code,
+          language: 'python'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('제출에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      
+      // 2. 기본 채점 결과 표시
+      setSubmissionResult({
+        id: result.submission_id,
+        verdict: result.verdict || 'Pending',
+        execution_time: result.execution_time || 0,
+        memory_usage: result.memory_usage || 0,
+        feedback: []
+      });
+
+      // 3. 분석 시작 (백그라운드)
+      if (result.verdict === 'Accepted') {
+        setIsAnalyzing(true);
+        await analyzeCode(result.submission_id);
+      }
+
+    } catch (error) {
+      console.error('제출 오류:', error);
+      alert('제출 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const analyzeCode = async (submissionId: number) => {
+    try {
+      const response = await fetch(`/api/analyze/${submissionId}`, {
+        method: 'GET'
+      });
+
+      if (response.ok) {
+        const analysisResult = await response.json();
+        setSubmissionResult(prev => prev ? {
+          ...prev,
+          feedback: analysisResult.feedback || []
+        } : null);
+      }
+    } catch (error) {
+      console.error('분석 오류:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleRun = () => {
+    alert('코드 실행 기능은 개발 중입니다.');
+  };
+
+  if (!problem) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">문제를 찾을 수 없습니다</h1>
+            <button 
+              onClick={() => router.push('/problems')}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+            >
+              문제 목록으로 돌아가기
+            </button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-6">
+            <button
+              onClick={() => router.push('/problems')}
+              className="flex items-center text-indigo-600 hover:text-indigo-800 mb-4"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              문제 목록으로 돌아가기
+            </button>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {problem.id}. {problem.title}
+                </h1>
+                <div className="flex items-center mt-2 space-x-4 flex-wrap">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(problem.difficulty)}`}>
+                    {problem.difficulty}
+                  </span>
+                  <span className="text-gray-600">{problem.paradigms.join(', ')}</span>
+                  {problem.expected_complexity && (
+                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-sm font-medium">
+                      예상 복잡도: {problem.expected_complexity}
+                    </span>
+                  )}
+                  {problem.paradigms && problem.paradigms.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {problem.paradigms.map((paradigm, index) => (
+                        <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs">
+                          {paradigm}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 문제 설명 패널 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-6">
+                {/* 문제 설명 */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">문제 설명</h3>
+                  <div className="text-gray-700 whitespace-pre-line">
+                    {problem.description}
+                  </div>
+                </div>
+
+                {/* 힌트/해답 보기 */}
+                <div>
+                  <button
+                    onClick={() => setShowSolution(!showSolution)}
+                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+                  >
+                    {showSolution ? '해답 숨기기' : '해답 보기'}
+                  </button>
+                  
+                  {showSolution && solutions.length > 0 && (
+                    <div className="mt-4 space-y-4">
+                      <h4 className="text-md font-semibold text-gray-900 mb-2">해답</h4>
+                      
+                      {/* 솔루션 선택 탭 */}
+                      {solutions.length > 1 && (
+                        <div className="flex space-x-2 mb-4">
+                          {solutions.map((solution, index) => (
+                            <button
+                              key={solution.id}
+                              onClick={() => setSelectedSolution(solution)}
+                              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                                selectedSolution?.id === solution.id
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              }`}
+                            >
+                              {solution.type === 'optimal' ? '최적화' : 
+                               solution.type === 'naive' ? '기본' : 
+                               `해법 ${index + 1}`}
+                              <span className="ml-1 text-xs">({solution.complexity})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 선택된 솔루션 표시 */}
+                      {(() => {
+                        const currentSolution = selectedSolution || solutions[0];
+                        return currentSolution ? (
+                          <div>
+                            <div className="mb-2 text-sm text-gray-600">
+                              <span className="font-medium">복잡도: {currentSolution.complexity}</span>
+                              {currentSolution.explanation && (
+                                <span className="ml-4">{currentSolution.explanation}</span>
+                              )}
+                            </div>
+                            <div className="bg-gray-900 text-gray-100 p-4 rounded-md font-mono text-sm whitespace-pre-line overflow-x-auto">
+                              {currentSolution.code}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+
+                  {showSolution && solutions.length === 0 && (
+                    <div className="mt-4 p-4 bg-gray-100 rounded-md text-gray-600">
+                      아직 등록된 해답이 없습니다.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 코드 에디터 패널 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="space-y-4">
+                {/* 제목 */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">코드 에디터 (Python)</h3>
+                </div>
+
+                {/* 코드 에디터 */}
+                <div>
+                  <textarea
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="w-full h-96 p-4 font-mono text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                    placeholder="여기에 코드를 작성하세요..."
+                    style={{ fontFamily: 'Monaco, Consolas, "Courier New", monospace' }}
+                  />
+                </div>
+
+                {/* 실행 버튼들 */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleRun}
+                    className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                  >
+                    실행
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmitting ? '제출 중...' : '제출'}
+                  </button>
+                </div>
+
+                {/* 제출 결과 및 피드백 표시 */}
+                {submissionResult && (
+                  <div className="space-y-4">
+                    {/* 기본 채점 결과 */}
+                    <div className={`p-4 rounded-lg ${
+                      submissionResult.verdict === 'Accepted' 
+                        ? 'bg-green-50 border border-green-200 text-green-800'
+                        : 'bg-red-50 border border-red-200 text-red-800'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          {submissionResult.verdict === 'Accepted' ? (
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          <span className="font-medium">{submissionResult.verdict}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="mr-4">시간: {submissionResult.execution_time}ms</span>
+                          <span>메모리: {submissionResult.memory_usage}KB</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 분석 진행 중 표시 */}
+                    {isAnalyzing && (
+                      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 mr-2"></div>
+                          <span>코드 분석 중...</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI 피드백 카드들 */}
+                    {submissionResult.feedback.length > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-gray-900">AI 분석 결과</h4>
+                        {submissionResult.feedback.map((feedback, index) => (
+                          <FeedbackCard key={index} feedback={feedback} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 피드백 카드 컴포넌트 */}
+          <FeedbackCard />
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+// 피드백 카드 컴포넌트
+function FeedbackCard({ feedback }: { feedback?: Feedback }) {
+  if (!feedback) return null;
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'error': return 'bg-red-50 border-red-200 text-red-800';
+      case 'warning': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'info': return 'bg-blue-50 border-blue-200 text-blue-800';
+      default: return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'error':
+        return (
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        );
+      case 'warning':
+        return (
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        );
+      case 'info':
+        return (
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded-lg border ${getSeverityColor(feedback.severity)}`}>
+      <div className="flex items-start">
+        {getSeverityIcon(feedback.severity)}
+        <div className="flex-1">
+          <h5 className="font-medium mb-2">{feedback.title}</h5>
+          <p className="text-sm mb-3">{feedback.message}</p>
+          {feedback.code_suggestion && (
+            <div>
+              <h6 className="font-medium text-sm mb-2">개선 제안:</h6>
+              <pre className="bg-gray-900 text-gray-100 p-3 rounded text-xs overflow-x-auto">
+                {feedback.code_suggestion}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { id } = context.params!;
+  
+  try {
+    // API 함수를 직접 import하여 사용
+    const { Pool } = await import('pg');
+    
+    const pool = new Pool({
+      user: 'postgres',
+      host: process.env.NODE_ENV === 'production' ? 'my-app-db' : 'localhost',
+      database: 'postgres',
+      password: 'root',
+      port: 5432,
+    });
+
+    const query = `
+      SELECT 
+        id, title, description, difficulty, category,
+        paradigms, expected_complexity
+      FROM problems 
+      WHERE id = $1
+    `;
+
+    const solutionsQuery = `
+      SELECT 
+        id, type, code, complexity, explanation
+      FROM exemplars 
+      WHERE problem_id = $1
+      ORDER BY 
+        CASE 
+          WHEN type = 'optimal' THEN 1
+          WHEN type = 'naive' THEN 2
+          ELSE 3
+        END
+    `;
+
+    const [problemResult, solutionsResult] = await Promise.all([
+      pool.query(query, [id]),
+      pool.query(solutionsQuery, [id])
+    ]);
+    
+    await pool.end();
+    
+    if (problemResult.rows.length === 0) {
+      return {
+        props: {
+          problem: null,
+          solutions: []
+        }
+      };
+    }
+
+    const problem = {
+      id: problemResult.rows[0].id,
+      title: problemResult.rows[0].title,
+      description: problemResult.rows[0].description,
+      difficulty: problemResult.rows[0].difficulty as 'Easy' | 'Medium' | 'Hard',
+      category: problemResult.rows[0].category || '',
+      paradigms: problemResult.rows[0].paradigms || [],
+      expected_complexity: problemResult.rows[0].expected_complexity || 'O(n)'
+    };
+
+    const solutions = solutionsResult.rows.map((row: any) => ({
+      id: row.id,
+      type: row.type,
+      code: row.code,
+      complexity: row.complexity,
+      explanation: row.explanation || ''
+    }));
+
+    return {
+      props: {
+        problem,
+        solutions
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching problem:', error);
+    
+    return {
+      props: {
+        problem: null,
+        solutions: []
+      }
+    };
+  }
+};
