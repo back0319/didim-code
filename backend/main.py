@@ -7,6 +7,9 @@ import uvicorn
 from datetime import datetime
 import json
 
+# API 라우터 import
+from api.execution import router as execution_router
+
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(
     title="AI Algorithm Tutor API",
@@ -24,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 라우터 등록
+app.include_router(execution_router)
 
 # 데이터 모델 정의
 class Problem(BaseModel):

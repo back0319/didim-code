@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
 import Layout from '../../components/Layout';
+import CodeRunner from '../../components/CodeRunner';
+
+// Monaco Editor를 동적으로 로드 (SSR 이슈 방지)
+const MonacoEditor = dynamic(() => import('../../components/MonacoEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-gray-500">에디터 로딩 중...</div>
+    </div>
+  ),
+});
 
 interface Problem {
   id: number;
@@ -51,6 +63,16 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   const [showSolution, setShowSolution] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // 코드 실행 관련 state
+  const [isRunning, setIsRunning] = useState(false);
+  const [runResult, setRunResult] = useState<{
+    success: boolean;
+    output?: string;
+    error?: string;
+    executionTime?: number;
+    memoryUsage?: number;
+  } | null>(null);
 
   // 파이썬 코드 템플릿
   const codeTemplate = `def solution():
@@ -150,8 +172,49 @@ print(solution())`;
     }
   };
 
-  const handleRun = () => {
-    alert('코드 실행 기능은 개발 중입니다.');
+  const handleRun = async () => {
+    if (!code.trim()) {
+      alert('코드를 입력해주세요.');
+      return;
+    }
+
+    setIsRunning(true);
+    setRunResult(null);
+
+    try {
+      const response = await fetch('/api/run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: code,
+          language: 'python'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('코드 실행에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      setRunResult({
+        success: result.success || false,
+        output: result.output || '',
+        error: result.error || '',
+        executionTime: result.execution_time || 0,
+        memoryUsage: result.memory_usage || 0
+      });
+
+    } catch (error) {
+      console.error('실행 오류:', error);
+      setRunResult({
+        success: false,
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+      });
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   if (!problem) {
@@ -299,16 +362,22 @@ print(solution())`;
                 {/* 제목 */}
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">코드 에디터 (Python)</h3>
+                  <div className="text-sm text-gray-500">
+                    Ctrl+Enter로 실행, Ctrl+S로 저장
+                  </div>
                 </div>
 
-                {/* 코드 에디터 */}
-                <div>
-                  <textarea
+                {/* Monaco Editor */}
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <MonacoEditor
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full h-96 p-4 font-mono text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                    placeholder="여기에 코드를 작성하세요..."
-                    style={{ fontFamily: 'Monaco, Consolas, "Courier New", monospace' }}
+                    onChange={(value) => setCode(value || '')}
+                    language="python"
+                    theme="vs-dark"
+                    height="400px"
+                    fontSize={14}
+                    minimap={false}
+                    wordWrap="on"
                   />
                 </div>
 
@@ -316,9 +385,10 @@ print(solution())`;
                 <div className="flex space-x-3">
                   <button
                     onClick={handleRun}
-                    className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                    disabled={isRunning}
+                    className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    실행
+                    {isRunning ? '실행 중...' : '실행'}
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -328,63 +398,69 @@ print(solution())`;
                     {isSubmitting ? '제출 중...' : '제출'}
                   </button>
                 </div>
+              </div>
+            </div>
 
-                {/* 제출 결과 및 피드백 표시 */}
-                {submissionResult && (
-                  <div className="space-y-4">
-                    {/* 기본 채점 결과 */}
-                    <div className={`p-4 rounded-lg ${
-                      submissionResult.verdict === 'Accepted' 
-                        ? 'bg-green-50 border border-green-200 text-green-800'
-                        : 'bg-red-50 border border-red-200 text-red-800'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          {submissionResult.verdict === 'Accepted' ? (
-                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          <span className="font-medium">{submissionResult.verdict}</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="mr-4">시간: {submissionResult.execution_time}ms</span>
-                          <span>메모리: {submissionResult.memory_usage}KB</span>
-                        </div>
-                      </div>
+            {/* 코드 실행 결과 패널 */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <CodeRunner
+                onRun={handleRun}
+                isRunning={isRunning}
+                result={runResult}
+              />
+            </div>
+
+            {/* 제출 결과 및 피드백 표시 */}
+            {submissionResult && (
+              <div className="bg-white rounded-lg shadow-lg p-6 space-y-4">
+                {/* 기본 채점 결과 */}
+                <div className={`p-4 rounded-lg ${
+                  submissionResult.verdict === 'Accepted' 
+                    ? 'bg-green-50 border border-green-200 text-green-800'
+                    : 'bg-red-50 border border-red-200 text-red-800'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      {submissionResult.verdict === 'Accepted' ? (
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className="font-medium">{submissionResult.verdict}</span>
                     </div>
+                    <div className="text-sm">
+                      <span className="mr-4">시간: {submissionResult.execution_time}ms</span>
+                      <span>메모리: {submissionResult.memory_usage}KB</span>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* 분석 진행 중 표시 */}
-                    {isAnalyzing && (
-                      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 mr-2"></div>
-                          <span>코드 분석 중...</span>
-                        </div>
-                      </div>
-                    )}
+                {/* 분석 진행 중 표시 */}
+                {isAnalyzing && (
+                  <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 mr-2"></div>
+                      <span>코드 분석 중...</span>
+                    </div>
+                  </div>
+                )}
 
-                    {/* AI 피드백 카드들 */}
-                    {submissionResult.feedback.length > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-gray-900">AI 분석 결과</h4>
-                        {submissionResult.feedback.map((feedback, index) => (
-                          <FeedbackCard key={index} feedback={feedback} />
-                        ))}
-                      </div>
-                    )}
+                {/* AI 피드백 카드들 */}
+                {submissionResult.feedback.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900">AI 분석 결과</h4>
+                    {submissionResult.feedback.map((feedback, index) => (
+                      <FeedbackCard key={index} feedback={feedback} />
+                    ))}
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
-
-          {/* 피드백 카드 컴포넌트 */}
-          <FeedbackCard />
         </div>
       </div>
     </Layout>
