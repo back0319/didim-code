@@ -37,6 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         p.title,
         p.description,
         p.difficulty,
+        p.category,
         p.paradigms,
         p.expected_complexity
       FROM problems p
@@ -53,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       title: row.title,
       description: row.description,
       difficulty: row.difficulty as 'Easy' | 'Medium' | 'Hard',
-      category: row.paradigms ? row.paradigms.join(', ') : 'Algorithm', // paradigms 배열을 문자열로 변환
+      category: row.category || 'Algorithm', // 실제 category 컬럼 사용
       solved: false, // 현재는 사용자 로그인 없이 기본값
       acceptance_rate: Math.floor(Math.random() * 80) + 20 // 임시로 랜덤 정답률
     }));

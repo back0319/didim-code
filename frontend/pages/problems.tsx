@@ -23,7 +23,8 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const [selectedDifficulty, setSelectedDifficulty] = useState('전체');
 
-  const categories = ['전체', 'Array', 'String', 'Dynamic Programming', 'Graph', 'Tree', 'Sorting'];
+  // 실제 문제들에서 카테고리 목록을 동적으로 생성
+  const categories = ['전체', ...Array.from(new Set(problems.map(p => p.category).filter(Boolean)))];
 
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
