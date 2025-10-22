@@ -9,6 +9,11 @@ import json
 
 # API 라우터 import
 from api.execution import router as execution_router
+from api.judge import router as judge_router
+from api.visualization import router as visualization_router
+
+# DMOJ 채점 시스템 초기화
+from judge_system.manager import judge_manager
 
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(
@@ -30,6 +35,27 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(execution_router)
+app.include_router(judge_router)
+app.include_router(visualization_router)
+
+# 앱 시작/종료 이벤트 핸들러
+@app.on_event("startup")
+async def startup_event():
+    """앱 시작 시 DMOJ 채점 시스템 초기화"""
+    try:
+        await judge_manager.start()
+        print("🚀 DMOJ Judge System started successfully!")
+    except Exception as e:
+        print(f"❌ Failed to start DMOJ Judge System: {e}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """앱 종료 시 DMOJ 채점 시스템 정리"""
+    try:
+        await judge_manager.stop()
+        print("🛑 DMOJ Judge System stopped gracefully!")
+    except Exception as e:
+        print(f"❌ Error stopping DMOJ Judge System: {e}")
 
 # 데이터 모델 정의
 class Problem(BaseModel):
