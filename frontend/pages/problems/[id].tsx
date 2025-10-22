@@ -15,6 +15,16 @@ const MonacoEditor = dynamic(() => import('../../components/MonacoEditor'), {
   ),
 });
 
+// 시각화 컴포넌트를 동적으로 로드
+const CodeVisualization = dynamic(() => import('../../components/CodeVisualization'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-gray-500">시각화 로딩 중...</div>
+    </div>
+  ),
+});
+
 interface Problem {
   id: number;
   title: string;
@@ -63,6 +73,10 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   const [showSolution, setShowSolution] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // 시각화 관련 state
+  const [showVisualization, setShowVisualization] = useState(false);
+  const [inputForVisualization, setInputForVisualization] = useState('');
   
   // 코드 실행 관련 state
   const [isRunning, setIsRunning] = useState(false);
@@ -283,122 +297,192 @@ print(solution())`;
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* 문제 설명 패널 */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-6">
-                {/* 문제 설명 */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">문제 설명</h3>
-                  <div className="text-gray-700 whitespace-pre-line">
-                    {problem.description}
+              {!showVisualization ? (
+                <div className="space-y-6">
+                  {/* 헤더와 시각화 버튼 */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">문제 설명</h3>
+                    <button
+                      onClick={() => setShowVisualization(true)}
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span>시각화</span>
+                    </button>
+                  </div>
+
+                  {/* 문제 설명 */}
+                  <div>
+                    <div className="text-gray-700 whitespace-pre-line">
+                      {problem.description}
+                    </div>
+                  </div>
+
+                  {/* 힌트/해답 보기 */}
+                  <div>
+                    <button
+                      onClick={() => setShowSolution(!showSolution)}
+                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+                    >
+                      {showSolution ? '해답 숨기기' : '해답 보기'}
+                    </button>
+                    
+                    {showSolution && solutions.length > 0 && (
+                      <div className="mt-4 space-y-4">
+                        <h4 className="text-md font-semibold text-gray-900 mb-2">해답</h4>
+                        
+                        {/* 솔루션 선택 탭 */}
+                        {solutions.length > 1 && (
+                          <div className="flex space-x-2 mb-4">
+                            {solutions.map((solution, index) => (
+                              <button
+                                key={solution.id}
+                                onClick={() => setSelectedSolution(solution)}
+                                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                                  selectedSolution?.id === solution.id
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                {solution.type === 'optimal' ? '최적화' : 
+                                 solution.type === 'naive' ? '기본' : 
+                                 `해법 ${index + 1}`}
+                                <span className="ml-1 text-xs">({solution.complexity})</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 선택된 솔루션 표시 */}
+                        {(() => {
+                          const currentSolution = selectedSolution || solutions[0];
+                          return currentSolution ? (
+                            <div>
+                              <div className="mb-2 text-sm text-gray-600">
+                                <span className="font-medium">복잡도: {currentSolution.complexity}</span>
+                                {currentSolution.explanation && (
+                                  <span className="ml-4">{currentSolution.explanation}</span>
+                                )}
+                              </div>
+                              <div className="bg-gray-900 text-gray-100 p-4 rounded-md font-mono text-sm whitespace-pre-line overflow-x-auto">
+                                {currentSolution.code}
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
+
+                    {showSolution && solutions.length === 0 && (
+                      <div className="mt-4 p-4 bg-gray-100 rounded-md text-gray-600">
+                        아직 등록된 해답이 없습니다.
+                      </div>
+                    )}
                   </div>
                 </div>
+              ) : (
+                /* 시각화 모드 */
+                <div className="space-y-4">
+                  {/* 시각화 헤더 */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">코드 시각화</h3>
+                    <button
+                      onClick={() => setShowVisualization(false)}
+                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>문제 설명</span>
+                    </button>
+                  </div>
 
-                {/* 힌트/해답 보기 */}
-                <div>
-                  <button
-                    onClick={() => setShowSolution(!showSolution)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-                  >
-                    {showSolution ? '해답 숨기기' : '해답 보기'}
-                  </button>
-                  
-                  {showSolution && solutions.length > 0 && (
-                    <div className="mt-4 space-y-4">
-                      <h4 className="text-md font-semibold text-gray-900 mb-2">해답</h4>
-                      
-                      {/* 솔루션 선택 탭 */}
-                      {solutions.length > 1 && (
-                        <div className="flex space-x-2 mb-4">
-                          {solutions.map((solution, index) => (
-                            <button
-                              key={solution.id}
-                              onClick={() => setSelectedSolution(solution)}
-                              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                selectedSolution?.id === solution.id
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                              }`}
-                            >
-                              {solution.type === 'optimal' ? '최적화' : 
-                               solution.type === 'naive' ? '기본' : 
-                               `해법 ${index + 1}`}
-                              <span className="ml-1 text-xs">({solution.complexity})</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* 선택된 솔루션 표시 */}
-                      {(() => {
-                        const currentSolution = selectedSolution || solutions[0];
-                        return currentSolution ? (
-                          <div>
-                            <div className="mb-2 text-sm text-gray-600">
-                              <span className="font-medium">복잡도: {currentSolution.complexity}</span>
-                              {currentSolution.explanation && (
-                                <span className="ml-4">{currentSolution.explanation}</span>
-                              )}
-                            </div>
-                            <div className="bg-gray-900 text-gray-100 p-4 rounded-md font-mono text-sm whitespace-pre-line overflow-x-auto">
-                              {currentSolution.code}
-                            </div>
-                          </div>
-                        ) : null;
-                      })()}
+                  {/* 입력 데이터 설정 */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      시각화용 입력 데이터 (선택사항)
+                    </label>
+                    <textarea
+                      value={inputForVisualization}
+                      onChange={(e) => setInputForVisualization(e.target.value)}
+                      placeholder="예: 5&#10;1 2 3 4 5"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      rows={3}
+                    />
+                    <div className="text-xs text-gray-500">
+                      입력이 필요한 코드의 경우 여기에 테스트 데이터를 입력하세요.
                     </div>
-                  )}
+                  </div>
 
-                  {showSolution && solutions.length === 0 && (
-                    <div className="mt-4 p-4 bg-gray-100 rounded-md text-gray-600">
-                      아직 등록된 해답이 없습니다.
-                    </div>
-                  )}
+                  {/* 변수 상태 및 현재 실행 정보 */}
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <CodeVisualization
+                      code={code}
+                      language="python"
+                      inputData={inputForVisualization}
+                      mode="variables-only"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* 코드 에디터 패널 */}
+            {/* 코드 에디터 패널 또는 코드 실행 시각화 패널 */}
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="space-y-4">
-                {/* 제목 */}
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">코드 에디터 (Python)</h3>
-                  <div className="text-sm text-gray-500">
-                    Ctrl+Enter로 실행, Ctrl+S로 저장
+              {!showVisualization ? (
+                /* 일반 코드 에디터 모드 */
+                <div className="space-y-4">
+                  {/* 제목 */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">코드 에디터 (Python)</h3>
+                    <div className="text-sm text-gray-500">
+                      Ctrl+Enter로 실행, Ctrl+S로 저장
+                    </div>
+                  </div>
+
+                  {/* Monaco Editor */}
+                  <div className="border border-gray-300 rounded-lg overflow-hidden">
+                    <MonacoEditor
+                      value={code}
+                      onChange={(value) => setCode(value || '')}
+                      language="python"
+                      theme="vs-dark"
+                      height="400px"
+                      fontSize={14}
+                      minimap={false}
+                      wordWrap="on"
+                    />
+                  </div>
+
+                  {/* 실행 버튼들 */}
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleRun}
+                      disabled={isRunning}
+                      className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isRunning ? '실행 중...' : '실행'}
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isSubmitting ? '제출 중...' : '제출'}
+                    </button>
                   </div>
                 </div>
-
-                {/* Monaco Editor */}
-                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                  <MonacoEditor
-                    value={code}
-                    onChange={(value) => setCode(value || '')}
-                    language="python"
-                    theme="vs-dark"
-                    height="400px"
-                    fontSize={14}
-                    minimap={false}
-                    wordWrap="on"
-                  />
-                </div>
-
-                {/* 실행 버튼들 */}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleRun}
-                    disabled={isRunning}
-                    className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isRunning ? '실행 중...' : '실행'}
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isSubmitting ? '제출 중...' : '제출'}
-                  </button>
-                </div>
-              </div>
+              ) : (
+                /* 시각화 모드 - 코드 실행 부분 */
+                <CodeVisualization
+                  code={code}
+                  language="python"
+                  inputData={inputForVisualization}
+                  mode="code-execution"
+                />
+              )}
             </div>
 
             {/* 코드 실행 결과 패널 */}
