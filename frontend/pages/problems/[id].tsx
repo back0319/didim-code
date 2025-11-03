@@ -78,6 +78,10 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   const [showVisualization, setShowVisualization] = useState(false);
   const [inputForVisualization, setInputForVisualization] = useState('');
   
+  // 시각화 데이터 공유를 위한 상태 (타입 명시)
+  const [visualizationData, setVisualizationData] = useState<any>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  
   // 코드 실행 관련 state
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState<{
@@ -399,23 +403,6 @@ print(solution())`;
                     </button>
                   </div>
 
-                  {/* 입력 데이터 설정 */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      시각화용 입력 데이터 (선택사항)
-                    </label>
-                    <textarea
-                      value={inputForVisualization}
-                      onChange={(e) => setInputForVisualization(e.target.value)}
-                      placeholder="예: 5&#10;1 2 3 4 5"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                      rows={3}
-                    />
-                    <div className="text-xs text-gray-500">
-                      입력이 필요한 코드의 경우 여기에 테스트 데이터를 입력하세요.
-                    </div>
-                  </div>
-
                   {/* 변수 상태 및 현재 실행 정보 */}
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <CodeVisualization
@@ -423,6 +410,10 @@ print(solution())`;
                       language="python"
                       inputData={inputForVisualization}
                       mode="variables-only"
+                      externalVisualizationData={visualizationData}
+                      externalCurrentStep={currentStep}
+                      onVisualizationDataChange={setVisualizationData}
+                      onCurrentStepChange={setCurrentStep}
                     />
                   </div>
                 </div>
@@ -481,6 +472,10 @@ print(solution())`;
                   language="python"
                   inputData={inputForVisualization}
                   mode="code-execution"
+                  externalVisualizationData={visualizationData}
+                  externalCurrentStep={currentStep}
+                  onVisualizationDataChange={setVisualizationData}
+                  onCurrentStepChange={setCurrentStep}
                 />
               )}
             </div>

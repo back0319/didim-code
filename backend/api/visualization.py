@@ -12,6 +12,9 @@ from typing import Dict, List, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+# 새로운 프레임 추적기 import
+from analyzer.frame_tracer import trace_execution
+
 router = APIRouter()
 
 
@@ -27,6 +30,9 @@ class Step(BaseModel):
     variables: Dict[str, Any]
     output: Optional[str] = None
     description: Optional[str] = None
+    func_name: Optional[str] = None
+    stack_frames: Optional[List[Dict]] = None
+    globals_vars: Optional[Dict[str, Any]] = None
 
 
 class ComplexityInfo(BaseModel):
@@ -108,137 +114,85 @@ def analyze_complexity(code: str) -> ComplexityInfo:
 
 
 def simulate_execution(code: str, input_data: str = "") -> List[Step]:
-    """코드 실행을 시뮬레이션하여 단계별 정보 생성"""
-    steps = []
-    code_lines = code.split('\n')
-    
-    # 함수만 정의된 경우 체크
-    has_function_calls = any('(' in line and not line.strip().startswith('def ') and not line.strip().startswith('#') 
-                            for line in code_lines if line.strip() and not line.strip().startswith('def '))
-    function_definitions = []
-    
+    """코드 실행을 실제로 추적하여 단계별 정보 생성"""
     try:
-        # AST를 사용해서 함수 정의 찾기
-        try:
-            tree = ast.parse(code)
-            for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    function_definitions.append({
-                        'name': node.name,
-                        'args': [arg.arg for arg in node.args.args],
-                        'line': node.lineno
-                    })
-        except:
-            pass
+        # 프레임 추적기를 사용하여 실제 실행 추적
+        traces = trace_execution(code, input_data)
         
-        # 간단한 정적 분석으로 실행 과정 시뮬레이션
-        lines_with_operations = []
-        
-        for i, line in enumerate(code_lines, 1):
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-                
-            # 변수 할당 감지
-            if '=' in line and not any(op in line for op in ['==', '!=', '<=', '>=']):
-                var_name = line.split('=')[0].strip()
-                operation = "assignment"
-                description = f"변수 {var_name}에 값을 할당합니다"
-                
-                # 간단한 값 추정
-                if 'input()' in line:
-                    mock_value = input_data.split('\n')[0] if input_data else "test_input"
-                elif any(num in line for num in '0123456789'):
-                    numbers = re.findall(r'\d+', line)
-                    mock_value = int(numbers[0]) if numbers else 0
-                elif 'range(' in line:
-                    mock_value = [0, 1, 2, 3, 4]
-                else:
-                    mock_value = "computed_value"
-                
-                variables = {var_name: mock_value}
-                
-            elif line.startswith('print('):
-                operation = "output"
-                description = "결과를 출력합니다"
-                variables = {}
-                
-            elif line.startswith('for ') or line.startswith('while '):
-                operation = "loop"
-                description = "반복문을 실행합니다"
-                variables = {}
-                
-            elif line.startswith('if '):
-                operation = "condition"
-                description = "조건을 확인합니다"
-                variables = {}
-                
-            elif line.startswith('def '):
-                # 함수 정의에서 함수명과 매개변수 추출
-                func_name = line.split('(')[0].replace('def ', '').strip()
-                params_part = line.split('(')[1].split(')')[0] if '(' in line else ''
-                params = [p.strip() for p in params_part.split(',') if p.strip()] if params_part else []
-                
-                operation = "function_def"
-                description = f"함수 '{func_name}'를 정의합니다"
-                variables = {func_name: f"function({', '.join(params)})"}
-                
-                # 매개변수도 변수로 추가
-                for param in params:
-                    if param:
-                        variables[param] = f"parameter of {func_name}"
-                
-            elif line.startswith('return '):
-                operation = "return"
-                description = "값을 반환합니다"
-                variables = {}
-                
-            else:
-                operation = "statement"
-                description = f"구문을 실행합니다: {line}"
-                variables = {}
+        steps = []
+        for trace in traces:
+            # 이벤트 타입에 따른 operation 결정
+            operation = "line"
+            description = f"라인 {trace['line']} 실행"
             
+            if trace['event'] == 'call':
+                operation = "function_call"
+                description = f"함수 '{trace['func_name']}' 호출"
+            elif trace['event'] == 'return':
+                operation = "function_return"
+                description = f"함수 '{trace['func_name']}'에서 반환"
+            elif trace['event'] == 'line':
+                # 라인의 내용에 따라 operation 세분화
+                code_lines = code.split('\n')
+                if trace['line'] <= len(code_lines):
+                    current_line = code_lines[trace['line'] - 1].strip()
+                    
+                    if '=' in current_line and not any(op in current_line for op in ['==', '!=', '<=', '>=']):
+                        operation = "assignment"
+                        var_name = current_line.split('=')[0].strip()
+                        description = f"변수 '{var_name}'에 값 할당"
+                    elif current_line.startswith('print('):
+                        operation = "output"
+                        description = "출력 실행"
+                    elif current_line.startswith(('if ', 'elif ', 'else:')):
+                        operation = "condition"
+                        description = "조건문 실행"
+                    elif current_line.startswith(('for ', 'while ')):
+                        operation = "loop"
+                        description = "반복문 실행"
+                    elif current_line.startswith('def '):
+                        operation = "function_def"
+                        func_name = current_line.split('(')[0].replace('def ', '').strip()
+                        description = f"함수 '{func_name}' 정의"
+                    elif current_line.startswith('return '):
+                        operation = "return"
+                        description = "값 반환"
+            
+            # Step 객체 생성
             step = Step(
-                line=i,
+                line=trace['line'],
                 operation=operation,
-                variables=variables,
-                description=description
+                variables=trace['encoded_locals'],
+                description=description,
+                func_name=trace.get('func_name'),
+                stack_frames=trace.get('stack_to_render', []),
+                globals_vars=trace.get('globals', {})
             )
+            
             steps.append(step)
         
-        # 함수만 정의되고 호출이 없는 경우 예시 호출 추가
-        if function_definitions and not has_function_calls and len(steps) > 0:
-            for func_def in function_definitions:
-                if func_def['args']:
-                    # 매개변수가 있는 경우 예시 값으로 시뮬레이션
-                    example_args = []
-                    example_values = {}
-                    for j, arg in enumerate(func_def['args']):
-                        example_val = j + 1  # 간단한 예시 값
-                        example_args.append(str(example_val))
-                        example_values[arg] = example_val
-                    
-                    steps.append(Step(
-                        line=len(code_lines) + 1,
-                        operation="function_call_example",
-                        variables=example_values,
-                        description=f"예시: {func_def['name']}({', '.join(example_args)}) 호출 시뮬레이션"
-                    ))
-                else:
-                    steps.append(Step(
-                        line=len(code_lines) + 1,
-                        operation="function_call_example", 
-                        variables={},
-                        description=f"예시: {func_def['name']}() 호출 시뮬레이션"
-                    ))
-    
+        # 추적 결과가 없는 경우 기본 단계 생성
+        if not steps:
+            steps = [Step(
+                line=1,
+                operation="execution",
+                variables={},
+                description="코드 실행 시작",
+                func_name="Global frame",
+                stack_frames=[],
+                globals_vars={}
+            )]
+            
     except Exception as e:
         # 오류 발생 시 기본 단계 생성
         steps = [Step(
             line=1,
-            operation="execution",
+            operation="error",
             variables={},
-            description=f"코드 분석 중 오류 발생: {str(e)}"
+            description=f"실행 중 오류 발생: {str(e)}",
+            func_name="Error",
+            stack_frames=[],
+            globals_vars={}
         )]
     
     return steps
