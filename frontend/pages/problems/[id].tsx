@@ -213,7 +213,8 @@ print(solution())`;
         },
         body: JSON.stringify({
           code: code,
-          language: 'python'
+          language: 'python',
+          input_data: inputForVisualization  // 시각화와 동일한 입력 데이터 사용
         })
       });
 
@@ -435,11 +436,28 @@ print(solution())`;
                       onChange={(value) => setCode(value || '')}
                       language="python"
                       theme="vs-dark"
-                      height="600px"
+                      height="500px"
                       fontSize={14}
                       minimap={false}
                       wordWrap="on"
                     />
+                  </div>
+
+                  {/* 입력 데이터 설정 */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      입력 데이터 (각 줄마다 한 입력값)
+                    </label>
+                    <textarea
+                      value={inputForVisualization}
+                      onChange={(e) => setInputForVisualization(e.target.value)}
+                      placeholder="예: 5"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                      rows={2}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      input()을 사용하는 코드의 경우, 여기에 입력값을 작성하세요.
+                    </p>
                   </div>
 
                   {/* 실행 버튼들 */}

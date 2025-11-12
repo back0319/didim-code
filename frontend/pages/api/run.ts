@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 interface RunRequest {
   code: string;
   language: string;
+  input_data?: string;
 }
 
 interface RunResponse {
@@ -22,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   try {
-    const { code, language }: RunRequest = req.body;
+    const { code, language, input_data }: RunRequest = req.body;
 
     if (!code || !language) {
       return res.status(400).json({
@@ -52,7 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       body: JSON.stringify({
         code,
-        language
+        language,
+        input_data: input_data || ''
       })
     });
 

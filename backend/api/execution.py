@@ -14,6 +14,7 @@ router = APIRouter()
 class CodeExecutionRequest(BaseModel):
     code: str
     language: str
+    input_data: Optional[str] = ""  # 입력 데이터 추가
 
 class CodeExecutionResponse(BaseModel):
     success: bool
@@ -36,7 +37,7 @@ async def execute_code(request: CodeExecutionRequest):
             raise HTTPException(status_code=400, detail="코드를 입력해주세요.")
         
         # Python 코드 실행
-        result = await execute_python_code(request.code)
+        result = await execute_python_code(request.code, request.input_data)
         return result
         
     except Exception as e:
@@ -45,7 +46,7 @@ async def execute_code(request: CodeExecutionRequest):
             error=f"실행 중 오류가 발생했습니다: {str(e)}"
         )
 
-async def execute_python_code(code: str) -> CodeExecutionResponse:
+async def execute_python_code(code: str, input_data: str = "") -> CodeExecutionResponse:
     """
     Python 코드를 안전하게 실행합니다.
     """
@@ -54,58 +55,90 @@ async def execute_python_code(code: str) -> CodeExecutionResponse:
         temp_file.write(code)
         temp_file_path = temp_file.name
     
+    # 입력 데이터가 있으면 임시 파일로 저장
+    input_file_path = None
+    if input_data:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as input_file:
+            input_file.write(input_data)
+            input_file_path = input_file.name
+    
     try:
         # 실행 시작 시간 기록
         start_time = time.time()
         
         # Python 코드 실행 (제한된 환경)
-        process = await asyncio.create_subprocess_exec(
-            'python', temp_file_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            preexec_fn=os.setsid if os.name != 'nt' else None  # Windows가 아닌 경우에만 process group 설정
-        )
-        
-        try:
-            # 5초 제한시간 설정
-            stdout, stderr = await asyncio.wait_for(
-                process.communicate(), 
-                timeout=5.0
-            )
-            
-            # 실행 시간 계산
-            execution_time = (time.time() - start_time) * 1000  # ms 단위
-            
-            # 메모리 사용량 (근사치)
-            memory_usage = psutil.Process().memory_info().rss // 1024  # KB 단위
-            
-            # 결과 반환
-            if process.returncode == 0:
-                return CodeExecutionResponse(
-                    success=True,
-                    output=stdout.decode('utf-8', errors='ignore').strip(),
-                    execution_time=execution_time,
-                    memory_usage=memory_usage
-                )
-            else:
-                return CodeExecutionResponse(
-                    success=False,
-                    error=stderr.decode('utf-8', errors='ignore').strip(),
-                    execution_time=execution_time
+        if input_file_path:
+            # 입력 데이터가 있으면 stdin으로 전달
+            with open(input_file_path, 'r') as input_file:
+                process = await asyncio.create_subprocess_exec(
+                    'python', temp_file_path,
+                    stdin=input_file,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    preexec_fn=os.setsid if os.name != 'nt' else None
                 )
                 
-        except asyncio.TimeoutError:
-            # 프로세스 종료
-            if os.name != 'nt':  # Windows가 아닌 경우
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-            else:  # Windows인 경우
-                process.terminate()
+                try:
+                    # 5초 제한시간 설정
+                    stdout, stderr = await asyncio.wait_for(
+                        process.communicate(), 
+                        timeout=5.0
+                    )
+                except asyncio.TimeoutError:
+                    if os.name != 'nt':
+                        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                    else:
+                        process.terminate()
+                    await process.wait()
+                    return CodeExecutionResponse(
+                        success=False,
+                        error="실행 시간이 5초를 초과했습니다. (무한 루프 가능성)"
+                    )
+        else:
+            # 입력 데이터가 없으면 일반 실행
+            process = await asyncio.create_subprocess_exec(
+                'python', temp_file_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                preexec_fn=os.setsid if os.name != 'nt' else None
+            )
             
-            await process.wait()
-            
+            try:
+                # 5초 제한시간 설정
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(), 
+                    timeout=5.0
+                )
+            except asyncio.TimeoutError:
+                if os.name != 'nt':
+                    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+                else:
+                    process.terminate()
+                await process.wait()
+                return CodeExecutionResponse(
+                    success=False,
+                    error="실행 시간이 5초를 초과했습니다. (무한 루프 가능성)"
+                )
+        
+        # 실행 시간 계산
+        execution_time = (time.time() - start_time) * 1000  # ms 단위
+        
+        # 메모리 사용량 (근사치)
+        memory_usage = psutil.Process().memory_info().rss // 1024  # KB 단위
+        
+        # 결과 반환
+        if process.returncode == 0:
+            return CodeExecutionResponse(
+                success=True,
+                output=stdout.decode('utf-8', errors='ignore').strip(),
+                execution_time=execution_time,
+                memory_usage=memory_usage
+            )
+        else:
             return CodeExecutionResponse(
                 success=False,
-                error="실행 시간이 5초를 초과했습니다. (무한 루프 가능성)"
+                error=stderr.decode('utf-8', errors='ignore').strip(),
+                execution_time=execution_time
             )
             
     except Exception as e:
@@ -117,6 +150,8 @@ async def execute_python_code(code: str) -> CodeExecutionResponse:
         # 임시 파일 삭제
         try:
             os.unlink(temp_file_path)
+            if input_file_path:
+                os.unlink(input_file_path)
         except:
             pass
 
