@@ -33,6 +33,7 @@ class Step(BaseModel):
     func_name: Optional[str] = None
     stack_frames: Optional[List[Dict]] = None
     globals_vars: Optional[Dict[str, Any]] = None
+    current_blocks: Optional[List[Dict]] = None  # 블록 구조 정보 추가
 
 
 class ComplexityInfo(BaseModel):
@@ -158,15 +159,23 @@ def simulate_execution(code: str, input_data: str = "") -> List[Step]:
                         operation = "return"
                         description = "값 반환"
             
-            # Step 객체 생성
+            # Step 객체 생성 - 더 구조화된 데이터 제공
+            stack_frames = trace.get('stack_to_render', [])
+            globals_vars = trace.get('globals', {})
+            locals_vars = trace['encoded_locals']
+            
+            # 전역과 로컬 변수를 합친 변수 딕셔너리
+            all_variables = {**globals_vars, **locals_vars}
+            
             step = Step(
                 line=trace['line'],
                 operation=operation,
-                variables=trace['encoded_locals'],
+                variables=all_variables,  # 모든 변수 (호환성 유지)
                 description=description,
                 func_name=trace.get('func_name'),
-                stack_frames=trace.get('stack_to_render', []),
-                globals_vars=trace.get('globals', {})
+                stack_frames=stack_frames,
+                globals_vars=globals_vars,
+                current_blocks=trace.get('current_blocks', [])  # 블록 구조 정보 추가
             )
             
             steps.append(step)

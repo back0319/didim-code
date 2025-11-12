@@ -746,44 +746,157 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
     extractAndColorAllVariables();
   }, [code, visualizationData, extractAndColorAllVariables]);
 
-  // renderVariableVisualization 함수
-  const renderVariableVisualization = (variables: Record<string, any>) => {
+  // 함수 박스와 변수 시각화 (전체 모드용)
+  const renderFunctionBoxesForFullMode = (variables: Record<string, any>) => {
+    if (!currentStepData) {
+      return (
+        <div className="text-center text-gray-500 py-8">
+          <div className="text-4xl mb-2">📊</div>
+          <div>코드를 실행하여 변수와 함수를 시각화하세요</div>
+        </div>
+      );
+    }
+
+    // 스택 프레임이 있는 경우 함수별로 그룹화
+    const stackFrames = currentStepData.stack_frames || [];
+    const globalVars = currentStepData.globals_vars || {};
+    
+    // 모든 변수를 표시 (stack_frames가 없어도 variables 표시)
+    const allVariables = Object.entries(variables)
+      .filter(([name]) => isValidVariableName(name));
+    
+    // 전역 변수 분리
+    const globalVariables = Object.entries(globalVars)
+      .filter(([name]) => isValidVariableName(name));
+    
+    if (stackFrames.length === 0 && allVariables.length === 0) {
+      return (
+        <div className="text-center text-gray-500 py-8">
+          <div className="text-4xl mb-2">📊</div>
+          <div>변수가 생성되면 여기에 표시됩니다</div>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-3">
-        {Object.entries(variables)
-          .filter(([name]) => isValidVariableName(name))
-          .map(([name, value]) => {
-          const color = assignVariableColor(name);
-          return (
-            <div 
-              key={name} 
-              className="p-3 rounded-lg border-2" 
-              style={{ 
-                backgroundColor: `${color}10`, // 6% 투명도
-                borderColor: color 
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                  <span 
-                    className="font-mono text-sm font-semibold"
-                    style={{ color: color }}
-                  >
-                    {name}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-500">{typeof value}</span>
+      <div className="space-y-4">
+        {/* 전역 변수 박스 */}
+        {globalVariables.length > 0 && (
+          <div className="border-2 border-green-400 rounded-lg p-4 bg-green-50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                <span className="font-bold text-green-700">전역 영역 (Global)</span>
               </div>
-              <div className="mt-2">
-                {renderVariableValue(name, value, color)}
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                전역변수 {globalVariables.length}개
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {globalVariables.map(([name, value]) => renderVariableCardCompact(name, value))}
+            </div>
+          </div>
+        )}
+
+        {/* 함수별 박스 */}
+        {stackFrames.map((frame: any, frameIndex: number) => {
+          if (!frame.encoded_locals || frame.ordered_varnames.length === 0) {
+            return null;
+          }
+
+          const funcVariables = frame.ordered_varnames
+            .filter((varName: string) => isValidVariableName(varName) && frame.encoded_locals[varName] !== undefined);
+
+          if (funcVariables.length === 0) {
+            return null;
+          }
+
+          const frameColor = frame.is_highlighted ? 'blue' : 'purple';
+          const frameColorClass = frame.is_highlighted ? 'border-blue-400 bg-blue-50' : 'border-purple-400 bg-purple-50';
+
+          return (
+            <div key={`${frame.func_name}-${frameIndex}`} className={`border-2 rounded-lg p-4 ${frameColorClass}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-4 h-4 ${frame.is_highlighted ? 'bg-blue-500' : 'bg-purple-500'} rounded`}></div>
+                  <span className={`font-bold ${frame.is_highlighted ? 'text-blue-700' : 'text-purple-700'}`}>
+                    함수: {frame.func_name}
+                  </span>
+                  {frame.is_highlighted && (
+                    <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">현재 실행 중</span>
+                  )}
+                </div>
+                <span className={`text-xs ${frame.is_highlighted ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} px-2 py-1 rounded`}>
+                  지역변수 {funcVariables.length}개
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {funcVariables.map((varName: string) => {
+                  const value = frame.encoded_locals[varName];
+                  return renderVariableCardCompact(varName, value, frame.func_name);
+                })}
               </div>
             </div>
           );
         })}
+
+        {/* 스택이 없지만 일반 변수가 있는 경우 */}
+        {stackFrames.length === 0 && allVariables.length > 0 && (
+          <div className="border-2 border-gray-400 rounded-lg p-4 bg-gray-50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gray-500 rounded"></div>
+                <span className="font-bold text-gray-700">메인 영역</span>
+              </div>
+              <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                변수 {allVariables.length}개
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {allVariables.map(([name, value]) => renderVariableCardCompact(name, value))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 전체 모드용 축약된 변수 카드
+  const renderVariableCardCompact = (name: string, value: any, funcName?: string) => {
+    const color = variableColors[name] || assignVariableColor(name);
+    
+    return (
+      <div
+        key={`${funcName || 'global'}-${name}`}
+        className="bg-white border rounded-lg p-2 shadow-sm"
+        style={{
+          borderColor: color,
+          boxShadow: `0 1px 3px ${color}20`
+        }}
+      >
+        {/* 변수명 헤더 */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center space-x-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: color }}
+            ></div>
+            <span
+              className="font-mono font-bold text-xs"
+              style={{ color: color }}
+            >
+              {name}
+            </span>
+          </div>
+          <span className="text-xs bg-gray-100 text-gray-600 px-1 py-0.5 rounded">
+            {getVariableType(value)}
+          </span>
+        </div>
+
+        {/* 변수 값 표시 (축약) */}
+        <div className="text-xs font-mono bg-gray-50 p-1 rounded border text-gray-800">
+          {formatValueForDisplay(value)}
+        </div>
       </div>
     );
   };
@@ -1106,9 +1219,33 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
   }
 
   if (mode === 'variables-only') {
-    // 변수 상태를 카드 형태로 시각화
-    const renderVariableCards = () => {
-      if (!currentStepData || Object.keys(currentStepData.variables).length === 0) {
+    // 함수별 변수 그룹화 시각화
+    const renderFunctionBoxes = () => {
+      if (!currentStepData) {
+        return (
+          <div className="text-center text-gray-500 py-8">
+            <div className="text-4xl mb-2">📊</div>
+            <div>코드를 실행하여 변수와 함수를 시각화하세요</div>
+          </div>
+        );
+      }
+
+      // 스택 프레임이 있는 경우 함수별로 그룹화
+      const stackFrames = currentStepData.stack_frames || [];
+      const currentBlocks = (currentStepData as any).current_blocks || [];
+      const globalVars = currentStepData.globals_vars || currentStepData.variables || {};
+      
+      // 반복문 블록만 필터링 (for, while만)
+      const loopBlocks = currentBlocks.filter((block: any) => 
+        block.type === 'for_loop' || block.type === 'while_loop'
+      );
+      
+      // 모든 변수들 (전역 + 로컬)
+      const allVariables = Object.entries(currentStepData.variables)
+        .filter(([name]) => isValidVariableName(name));
+      
+      // 스택이 비어있고 변수도 없고 반복문 블록도 없는 경우
+      if (stackFrames.length === 0 && allVariables.length === 0 && loopBlocks.length === 0) {
         return (
           <div className="text-center text-gray-500 py-8">
             <div className="text-4xl mb-2">📊</div>
@@ -1117,84 +1254,349 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
         );
       }
 
-      const validVariables = Object.entries(currentStepData.variables)
-        .filter(([name]) => isValidVariableName(name));
-
-      if (validVariables.length === 0) {
-        return (
-          <div className="text-center text-gray-500 py-8">
-            <div className="text-4xl mb-2">📊</div>
-            <div>표시할 변수가 없습니다</div>
-          </div>
-        );
-      }
-
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {validVariables.map(([name, value]) => {
-            const color = variableColors[name] || assignVariableColor(name);
-            
-            // 이전 스텝과 비교하여 변화 감지
-            const prevStepData = currentStep > 0 ? visualizationData?.steps[currentStep - 1] : null;
-            const hasChanged = prevStepData && 
-              JSON.stringify(prevStepData.variables[name]) !== JSON.stringify(value);
+        <div className="space-y-4">
+          {/* 최상위(부모) 반복문 블록만 표시 */}
+          {loopBlocks
+            .filter((block: any) => {
+              // 다른 블록에 포함되지 않는 최상위 블록만 필터링
+              return !loopBlocks.some((otherBlock: any) => 
+                otherBlock !== block &&
+                otherBlock.start_line < block.start_line &&
+                otherBlock.end_line >= block.end_line &&
+                otherBlock.depth < block.depth
+              );
+            })
+            .map((block: any, blockIndex: number) => {
+              const blockColor = getBlockColor(block.type);
+              const blockIcon = getBlockIcon(block.type);
+              
+              // 중첩 구조를 위한 자식 블록들 찾기 (직접적인 자식만)
+              const childBlocks = loopBlocks.filter((childBlock: any) => 
+                childBlock !== block &&
+                childBlock.start_line > block.start_line &&
+                childBlock.end_line <= block.end_line &&
+                childBlock.depth === block.depth + 1 // 직접적인 자식만
+              );
+              
+              // 현재 블록에 직접적으로 속하는 변수들 (개선된 로직)
+              const blockVariables = allVariables.filter(([name, value]) => {
+                // 간단한 휴리스틱: for문의 변수는 해당 블록에만 속함
+                if (block.type === 'for_loop') {
+                  // for문에서 선언된 반복 변수 찾기
+                  const forVarMatch = block.name.match(/for\s+(\w+)/);
+                  if (forVarMatch && forVarMatch[1] === name) {
+                    return true; // 이 블록의 반복 변수
+                  }
+                }
+                
+                // 자식 블록이 있는 경우, 자식 블록의 변수는 제외
+                const isChildBlockVariable = childBlocks.some((childBlock: any) => {
+                  const childForVarMatch = childBlock.name.match(/for\s+(\w+)/);
+                  return childForVarMatch && childForVarMatch[1] === name;
+                });
+                
+                if (isChildBlockVariable) {
+                  return false; // 자식 블록의 변수는 현재 블록에서 제외
+                }
+                
+                // 나머지 변수들은 최상위 블록에만 표시
+                const isTopLevelBlock = !loopBlocks.some((otherBlock: any) => 
+                  otherBlock !== block &&
+                  otherBlock.start_line < block.start_line &&
+                  otherBlock.end_line >= block.end_line &&
+                  otherBlock.depth < block.depth
+                );
+                
+                return isTopLevelBlock; // 최상위 블록에만 나머지 변수들 표시
+              });
+
+              return (
+                <div 
+                  key={`${block.type}-${blockIndex}`} 
+                  className={`border-2 rounded-lg p-4 ${blockColor.bg} ${blockColor.border}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-4 h-4 ${blockColor.icon} rounded`}></div>
+                      <span className={`font-bold ${blockColor.text}`}>
+                        {blockIcon} {block.name}
+                      </span>
+                      <span className="text-xs bg-white bg-opacity-50 px-2 py-1 rounded">
+                        라인 {block.start_line}-{block.end_line}
+                      </span>
+                    </div>
+                    {blockVariables.length > 0 && (
+                      <span className={`text-xs ${blockColor.badge} px-2 py-1 rounded`}>
+                        변수 {blockVariables.length}개
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* 블록의 변수들 */}
+                  {blockVariables.length > 0 && (
+                    <div className="mb-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {blockVariables.map(([name, value]) => 
+                          renderVariableCard(name, value, currentStepData, block.name)
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 중첩된 자식 블록들을 재귀적으로 렌더링 */}
+                  {childBlocks.length > 0 && renderNestedBlocks(childBlocks, loopBlocks, allVariables, 1)}
+                </div>
+              );
+            })}
+
+          {/* 함수별 박스 */}
+          {stackFrames.map((frame, frameIndex) => {
+            if (!frame.encoded_locals || frame.ordered_varnames.length === 0) {
+              return null;
+            }
+
+            const funcVariables = frame.ordered_varnames
+              .filter(varName => isValidVariableName(varName) && frame.encoded_locals[varName] !== undefined);
+
+            if (funcVariables.length === 0) {
+              return null;
+            }
+
+            const frameColor = frame.is_highlighted ? 'blue' : 'purple';
+            const frameColorClass = frame.is_highlighted ? 'border-blue-400 bg-blue-50' : 'border-purple-400 bg-purple-50';
 
             return (
-              <div
-                key={name}
-                className={`relative bg-white border-2 rounded-lg p-4 shadow-sm transition-all duration-500 ${
-                  hasChanged ? 'animate-pulse border-yellow-400 bg-yellow-50' : 'border-gray-200'
-                }`}
-                style={{
-                  borderColor: hasChanged ? '#fbbf24' : color,
-                  boxShadow: hasChanged ? `0 0 20px ${color}40` : `0 2px 8px ${color}20`
-                }}
-              >
-                {/* 변화 표시 아이콘 */}
-                {hasChanged && (
-                  <div className="absolute -top-2 -right-2 bg-yellow-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                    ↑
-                  </div>
-                )}
-
-                {/* 변수명 헤더 */}
+              <div key={`${frame.func_name}-${frameIndex}`} className={`border-2 rounded-lg p-4 ${frameColorClass}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: color }}
-                    ></div>
-                    <span
-                      className="font-mono font-bold text-lg"
-                      style={{ color: color }}
-                    >
-                      {name}
+                    <div className={`w-4 h-4 ${frame.is_highlighted ? 'bg-blue-500' : 'bg-purple-500'} rounded`}></div>
+                    <span className={`font-bold ${frame.is_highlighted ? 'text-blue-700' : 'text-purple-700'}`}>
+                      함수: {frame.func_name}
                     </span>
+                    {frame.is_highlighted && (
+                      <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">현재 실행 중</span>
+                    )}
                   </div>
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    {getVariableType(value)}
+                  <span className={`text-xs ${frame.is_highlighted ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} px-2 py-1 rounded`}>
+                    지역변수 {funcVariables.length}개
                   </span>
                 </div>
-
-                {/* 변수 값 표시 */}
-                <div className="space-y-2">
-                  {renderVariableValueCard(value, color)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {funcVariables.map(varName => {
+                    const value = frame.encoded_locals[varName];
+                    return renderVariableCard(varName, value, currentStepData, frame.func_name);
+                  })}
                 </div>
-
-                {/* 값 변화 히스토리 */}
-                {hasChanged && prevStepData && (
-                  <div className="mt-3 pt-2 border-t border-gray-200">
-                    <div className="text-xs text-gray-500 mb-1">이전 값:</div>
-                    <div className="text-sm text-gray-600 font-mono bg-gray-50 p-1 rounded">
-                      {formatValueForDisplay(prevStepData.variables[name])}
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
+
+          {/* 스택이 없고 반복문 블록도 없지만 일반 변수가 있는 경우 */}
+          {stackFrames.length === 0 && loopBlocks.length === 0 && allVariables.length > 0 && (
+            <div className="border-2 border-gray-400 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-gray-500 rounded"></div>
+                  <span className="font-bold text-gray-700">메인 영역</span>
+                </div>
+                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                  변수 {allVariables.length}개
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {allVariables.map(([name, value]) => renderVariableCard(name, value, currentStepData))}
+              </div>
+            </div>
+          )}
+          
+          {/* 블록도 함수도 없으면 변수들을 박스 없이 표시 */}
+          {stackFrames.length === 0 && loopBlocks.length === 0 && allVariables.length === 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Object.entries(currentStepData.variables)
+                .filter(([name]) => isValidVariableName(name))
+                .map(([name, value]) => renderVariableCard(name, value, currentStepData))}
+            </div>
+          )}
         </div>
       );
+    };
+
+    // 변수 카드 렌더링 함수
+    const renderVariableCard = (name: string, value: any, stepData: any, funcName?: string) => {
+      const color = variableColors[name] || assignVariableColor(name);
+      
+      // 이전 스텝과 비교하여 변화 감지
+      const prevStepData = currentStep > 0 ? visualizationData?.steps[currentStep - 1] : null;
+      const hasChanged = prevStepData && 
+        JSON.stringify(prevStepData.variables[name]) !== JSON.stringify(value);
+
+      return (
+        <div
+          key={`${funcName || 'global'}-${name}`}
+          className={`relative bg-white border rounded-lg p-3 shadow-sm transition-all duration-500 ${
+            hasChanged ? 'animate-pulse border-yellow-400 bg-yellow-50' : 'border-gray-200'
+          }`}
+          style={{
+            borderColor: hasChanged ? '#fbbf24' : color,
+            boxShadow: hasChanged ? `0 0 15px ${color}30` : `0 2px 6px ${color}20`
+          }}
+        >
+          {/* 변화 표시 아이콘 */}
+          {hasChanged && (
+            <div className="absolute -top-2 -right-2 bg-yellow-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+              ↑
+            </div>
+          )}
+
+          {/* 변수명 헤더 */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: color }}
+              ></div>
+              <span
+                className="font-mono font-bold text-sm"
+                style={{ color: color }}
+              >
+                {name}
+              </span>
+            </div>
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+              {getVariableType(value)}
+            </span>
+          </div>
+
+          {/* 변수 값 표시 */}
+          <div className="space-y-2">
+            {renderVariableValueCard(value, color)}
+          </div>
+
+          {/* 값 변화 히스토리 */}
+          {hasChanged && prevStepData && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="text-xs text-gray-500 mb-1">이전 값:</div>
+              <div className="text-xs text-gray-600 font-mono bg-gray-50 p-1 rounded">
+                {formatValueForDisplay(prevStepData.variables[name])}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // 블록 타입별 색상과 아이콘 반환 (for, while만)
+    const getBlockColor = (blockType: string) => {
+      switch (blockType) {
+        case 'for_loop':
+          return {
+            bg: 'bg-orange-50',
+            border: 'border-orange-400',
+            icon: 'bg-orange-500',
+            text: 'text-orange-700',
+            badge: 'bg-orange-100 text-orange-700'
+          };
+        case 'while_loop':
+          return {
+            bg: 'bg-red-50',
+            border: 'border-red-400',
+            icon: 'bg-red-500',
+            text: 'text-red-700',
+            badge: 'bg-red-100 text-red-700'
+          };
+        default:
+          return {
+            bg: 'bg-gray-50',
+            border: 'border-gray-400',
+            icon: 'bg-gray-500',
+            text: 'text-gray-700',
+            badge: 'bg-gray-100 text-gray-700'
+          };
+      }
+    };
+
+    // 블록 타입별 아이콘 반환 (for, while만)
+    const getBlockIcon = (blockType: string) => {
+      switch (blockType) {
+        case 'for_loop': return '🔄';
+        case 'while_loop': return '⭕';
+        default: return '📦';
+      }
+    };
+
+    // 중첩된 블록들을 재귀적으로 렌더링
+    const renderNestedBlocks = (blocks: any[], allBlocks: any[], variables: any[], depth: number): React.ReactNode => {
+      return blocks.map((block: any, index: number) => {
+        const blockColor = getBlockColor(block.type);
+        const blockIcon = getBlockIcon(block.type);
+        
+        // 현재 블록의 자식 블록들 찾기
+        const childBlocks = allBlocks.filter((childBlock: any) => 
+          childBlock !== block &&
+          childBlock.start_line > block.start_line &&
+          childBlock.end_line <= block.end_line &&
+          childBlock.depth === block.depth + 1
+        );
+        
+        // 현재 중첩 블록의 변수들 필터링
+        const nestedBlockVariables = variables.filter(([name, value]) => {
+          // 현재 블록의 반복 변수인지 확인
+          const forVarMatch = block.name.match(/for\s+(\w+)/);
+          if (forVarMatch && forVarMatch[1] === name) {
+            return true; // 이 블록의 반복 변수
+          }
+          
+          // 더 깊은 자식 블록의 변수는 제외
+          const isDeeperChildVariable = childBlocks.some((childBlock: any) => {
+            const childForVarMatch = childBlock.name.match(/for\s+(\w+)/);
+            return childForVarMatch && childForVarMatch[1] === name;
+          });
+          
+          return !isDeeperChildVariable;
+        });
+        
+        // 들여쓰기 계산
+        const indentClass = `ml-${Math.min(depth * 4, 16)}`;
+        
+        return (
+          <div 
+            key={`nested-${block.type}-${index}-${depth}`}
+            className={`border rounded-lg p-3 mt-2 ${indentClass} ${blockColor.bg} ${blockColor.border}`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 ${blockColor.icon} rounded`}></div>
+                <span className={`font-semibold text-sm ${blockColor.text}`}>
+                  {blockIcon} {block.name}
+                </span>
+                <span className="text-xs bg-white bg-opacity-50 px-1 py-0.5 rounded">
+                  라인 {block.start_line}-{block.end_line}
+                </span>
+                {nestedBlockVariables.length > 0 && (
+                  <span className={`text-xs ${blockColor.badge} px-1 py-0.5 rounded`}>
+                    {nestedBlockVariables.length}개
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* 중첩된 블록의 변수들 표시 */}
+            {nestedBlockVariables.length > 0 && (
+              <div className="mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {nestedBlockVariables.map(([name, value]) => 
+                    renderVariableCard(name, value, currentStepData, block.name)
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* 재귀적으로 더 깊은 중첩 블록들 렌더링 */}
+            {childBlocks.length > 0 && renderNestedBlocks(childBlocks, allBlocks, variables, depth + 1)}
+          </div>
+        );
+      });
     };
 
     return (
@@ -1211,7 +1613,7 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
           </h3>
         </div>
         <div className="p-6 max-h-96 overflow-y-auto">
-          {renderVariableCards()}
+          {renderFunctionBoxes()}
         </div>
       </div>
     );
@@ -1370,6 +1772,14 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* 변수 및 함수 상태 표시 */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-gray-900">변수 및 함수 상태</h4>
+            <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+              {renderFunctionBoxesForFullMode(currentStepData.variables)}
             </div>
           </div>
         </div>
