@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import Layout from '../../components/Layout';
 import CodeRunner from '../../components/CodeRunner';
+import Feedback from '../../components/Feedback';
 
 // Monaco Editor를 동적으로 로드 (SSR 이슈 방지)
 const MonacoEditor = dynamic(() => import('../../components/MonacoEditor'), {
@@ -33,6 +34,11 @@ interface Problem {
   category: string;
   paradigms: string[];
   expected_complexity: string;
+  input?: string;
+  output?: string;
+  input_examples?: string[];
+  output_examples?: string[];
+  example_explanation?: string;
 }
 
 interface Solution {
@@ -274,33 +280,13 @@ print(solution())`;
                 <h1 className="text-3xl font-bold text-gray-900">
                   {problem.id}. {problem.title}
                 </h1>
-                <div className="flex items-center mt-2 space-x-4 flex-wrap">
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(problem.difficulty)}`}>
-                    {problem.difficulty}
-                  </span>
-                  <span className="text-gray-600">{problem.paradigms.join(', ')}</span>
-                  {problem.expected_complexity && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-sm font-medium">
-                      예상 복잡도: {problem.expected_complexity}
-                    </span>
-                  )}
-                  {problem.paradigms && problem.paradigms.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {problem.paradigms.map((paradigm, index) => (
-                        <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs">
-                          {paradigm}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
             {/* 문제 설명 패널 */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="lg:col-span-3 bg-white rounded-lg shadow-lg p-6 min-h-[36rem]">
               {!showVisualization ? (
                 <div className="space-y-6">
                   {/* 헤더와 시각화 버튼 */}
@@ -324,64 +310,73 @@ print(solution())`;
                     </div>
                   </div>
 
-                  {/* 힌트/해답 보기 */}
-                  <div>
-                    <button
-                      onClick={() => setShowSolution(!showSolution)}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-                    >
-                      {showSolution ? '해답 숨기기' : '해답 보기'}
-                    </button>
+                  {/* 입출력 예시 */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900">입출력 예시</h4>
                     
-                    {showSolution && solutions.length > 0 && (
-                      <div className="mt-4 space-y-4">
-                        <h4 className="text-md font-semibold text-gray-900 mb-2">해답</h4>
-                        
-                        {/* 솔루션 선택 탭 */}
-                        {solutions.length > 1 && (
-                          <div className="flex space-x-2 mb-4">
-                            {solutions.map((solution, index) => (
-                              <button
-                                key={solution.id}
-                                onClick={() => setSelectedSolution(solution)}
-                                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                  selectedSolution?.id === solution.id
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
-                              >
-                                {solution.type === 'optimal' ? '최적화' : 
-                                 solution.type === 'naive' ? '기본' : 
-                                 `해법 ${index + 1}`}
-                                <span className="ml-1 text-xs">({solution.complexity})</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* 선택된 솔루션 표시 */}
-                        {(() => {
-                          const currentSolution = selectedSolution || solutions[0];
-                          return currentSolution ? (
-                            <div>
-                              <div className="mb-2 text-sm text-gray-600">
-                                <span className="font-medium">복잡도: {currentSolution.complexity}</span>
-                                {currentSolution.explanation && (
-                                  <span className="ml-4">{currentSolution.explanation}</span>
-                                )}
+                    {/* 예시가 있는 경우 */}
+                    {problem.input_examples && problem.output_examples && 
+                     problem.input_examples.length > 0 && problem.output_examples.length > 0 ? (
+                      <div className="space-y-4">
+                        {problem.input_examples.map((input, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                              <span className="font-semibold text-gray-700">예시 {index + 1}</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                              <div className="p-4">
+                                <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
+                                <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
+                                  {input}
+                                </pre>
                               </div>
-                              <div className="bg-gray-900 text-gray-100 p-4 rounded-md font-mono text-sm whitespace-pre-line overflow-x-auto">
-                                {currentSolution.code}
+                              <div className="p-4">
+                                <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
+                                <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
+                                  {problem.output_examples?.[index] || ''}
+                                </pre>
                               </div>
                             </div>
-                          ) : null;
-                        })()}
+                            {problem.example_explanation && (
+                              <div className="bg-blue-50 px-4 py-3 border-t border-gray-200">
+                                <div className="text-sm font-medium text-blue-800 mb-1">설명</div>
+                                <div className="text-sm text-blue-700">
+                                  {problem.example_explanation}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    )}
-
-                    {showSolution && solutions.length === 0 && (
-                      <div className="mt-4 p-4 bg-gray-100 rounded-md text-gray-600">
-                        아직 등록된 해답이 없습니다.
+                    ) : (
+                      /* 데이터베이스의 input/output 컬럼 사용 */
+                      <div className="space-y-4">
+                        {problem.input && problem.output ? (
+                          <div className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                              <span className="font-semibold text-gray-700">예시</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                              <div className="p-4">
+                                <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
+                                <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-line">
+                                  {problem.input}
+                                </pre>
+                              </div>
+                              <div className="p-4">
+                                <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
+                                <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-line">
+                                  {problem.output}
+                                </pre>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* 입출력 데이터가 없는 경우 */
+                          <div className="text-center text-gray-500 py-8">
+                            입출력 예시가 준비되지 않았습니다.
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -390,7 +385,7 @@ print(solution())`;
                 /* 시각화 모드 */
                 <div className="space-y-4">
                   {/* 시각화 헤더 */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between ">
                     <h3 className="text-lg font-semibold text-gray-900">코드 시각화</h3>
                     <button
                       onClick={() => setShowVisualization(false)}
@@ -421,7 +416,7 @@ print(solution())`;
             </div>
 
             {/* 코드 에디터 패널 또는 코드 실행 시각화 패널 */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6 min-h-[36rem]">
               {!showVisualization ? (
                 /* 일반 코드 에디터 모드 */
                 <div className="space-y-4">
@@ -440,7 +435,7 @@ print(solution())`;
                       onChange={(value) => setCode(value || '')}
                       language="python"
                       theme="vs-dark"
-                      height="400px"
+                      height="600px"
                       fontSize={14}
                       minimap={false}
                       wordWrap="on"
@@ -480,8 +475,8 @@ print(solution())`;
               )}
             </div>
 
-            {/* 코드 실행 결과 패널 */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            {/* 실행 결과패널 */}
+            <div className="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden">
               <CodeRunner
                 onRun={handleRun}
                 isRunning={isRunning}
@@ -489,9 +484,20 @@ print(solution())`;
               />
             </div>
 
+            {/* 피드백 패널 */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow-lg overflow-hidden">
+              <Feedback
+                onRun={handleRun}
+                isRunning={isRunning}
+                result={runResult}
+              />
+            </div>
+
+          
+
             {/* 제출 결과 및 피드백 표시 */}
             {submissionResult && (
-              <div className="bg-white rounded-lg shadow-lg p-6 space-y-4">
+              <div className="lg:col-span-5 bg-white rounded-lg shadow-lg p-6 space-y-4">
                 {/* 기본 채점 결과 */}
                 <div className={`p-4 rounded-lg ${
                   submissionResult.verdict === 'Accepted' 
@@ -623,7 +629,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const query = `
       SELECT 
         id, title, description, difficulty, category,
-        paradigms, expected_complexity
+        paradigms, expected_complexity, input, output
       FROM problems 
       WHERE id = $1
     `;
@@ -664,7 +670,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       difficulty: problemResult.rows[0].difficulty as 'Easy' | 'Medium' | 'Hard',
       category: problemResult.rows[0].category || '',
       paradigms: problemResult.rows[0].paradigms || [],
-      expected_complexity: problemResult.rows[0].expected_complexity || 'O(n)'
+      expected_complexity: problemResult.rows[0].expected_complexity || 'O(n)',
+      input: problemResult.rows[0].input || '',
+      output: problemResult.rows[0].output || ''
     };
 
     const solutions = solutionsResult.rows.map((row: any) => ({

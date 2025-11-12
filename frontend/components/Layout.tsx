@@ -93,50 +93,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {children}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">AlgoTutor</h3>
-              <p className="text-gray-600 text-sm">
-                AI 기반 알고리즘 학습 플랫폼으로<br />
-                효율적인 코딩 학습을 지원합니다.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">서비스</h4>
-              <ul className="space-y-2">
-                <li><Link href="/problems" className="text-gray-600 hover:text-gray-900 text-sm">문제</Link></li>
-                <li><Link href="/learn" className="text-gray-600 hover:text-gray-900 text-sm">학습</Link></li>
-                <li><Link href="/ranking" className="text-gray-600 hover:text-gray-900 text-sm">랭킹</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">지원</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">FAQ</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">문의하기</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">도움말</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">회사</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">소개</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">채용</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">이용약관</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t pt-8">
-            <p className="text-center text-gray-500 text-sm">
-              © 2025 AlgoTutor. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
       </div>
     </>
   );

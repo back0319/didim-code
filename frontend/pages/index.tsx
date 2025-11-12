@@ -123,51 +123,6 @@ const Home: React.FC = () => {
             </div>
           </div>
         </section>
-
-        {/* Stats Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="p-6">
-                <div className="text-4xl font-bold text-indigo-600 mb-2">1000+</div>
-                <div className="text-gray-600">알고리즘 문제</div>
-              </div>
-              <div className="p-6">
-                <div className="text-4xl font-bold text-purple-600 mb-2">50+</div>
-                <div className="text-gray-600">학습 트랙</div>
-              </div>
-              <div className="p-6">
-                <div className="text-4xl font-bold text-green-600 mb-2">98%</div>
-                <div className="text-gray-600">학습 만족도</div>
-              </div>
-              <div className="p-6">
-                <div className="text-4xl font-bold text-orange-600 mb-2">24/7</div>
-                <div className="text-gray-600">AI 튜터 지원</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600">
-          <div className="max-w-4xl mx-auto text-center px-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              지금 바로 시작해보세요
-            </h2>
-            <p className="text-xl text-indigo-100 mb-10">
-              수천 명의 개발자들이 이미 AlgoTutor와 함께 성장하고 있습니다
-            </p>
-            <Link 
-              href="/problems" 
-              className="inline-flex items-center bg-white text-indigo-600 font-bold py-4 px-10 rounded-2xl hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
-            >
-              무료로 시작하기
-              <svg className="ml-2 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </Link>
-          </div>
-        </section>
       </div>
     </Layout>
   );

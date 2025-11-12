@@ -1052,14 +1052,7 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
             >
               ← 이전
             </button>
-            <button
-              onClick={startAutoPlay}
-              className={`px-4 py-1 rounded text-white ${
-                isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
-              }`}
-            >
-              {isPlaying ? '⏸ 일시정지' : '▶ 재생'}
-            </button>
+  
             <button
               onClick={nextStep}
               disabled={currentStep === visualizationData.steps.length - 1}
@@ -1074,19 +1067,7 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
               🔄 초기화
             </button>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-600">속도:</label>
-            <select
-              value={playSpeed}
-              onChange={(e) => setPlaySpeed(parseInt(e.target.value))}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
-            >
-              <option value={500}>빠름</option>
-              <option value={1000}>보통</option>
-              <option value={2000}>느림</option>
-            </select>
-          </div>
+        
         </div>
 
         {/* 진행 바 */}

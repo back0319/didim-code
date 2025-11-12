@@ -77,59 +77,6 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
                 />
               </div>
             </div>
-
-            {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Difficulty Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">난이도</label>
-                <select
-                  value={selectedDifficulty}
-                  onChange={(e) => setSelectedDifficulty(e.target.value)}
-                  className="w-full py-3 px-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="전체">전체</option>
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Filter Summary */}
-            <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-              <div>
-                {filteredProblems.length}개의 문제가 검색되었습니다
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="flex items-center">
-                  <div className="w-3 h-3 bg-green-400 rounded-full mr-1"></div>
-                  Easy: {problems.filter(p => p.difficulty === 'Easy').length}
-                </span>
-                <span className="flex items-center">
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full mr-1"></div>
-                  Medium: {problems.filter(p => p.difficulty === 'Medium').length}
-                </span>
-                <span className="flex items-center">
-                  <div className="w-3 h-3 bg-red-400 rounded-full mr-1"></div>
-                  Hard: {problems.filter(p => p.difficulty === 'Hard').length}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Problems Grid */}
@@ -143,9 +90,6 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
                       <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                         {problem.id}. {problem.title}
                       </h3>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(problem.difficulty)}`}>
-                        {problem.difficulty}
-                      </div>
                     </div>
                     {problem.solved && (
                       <div className="ml-2 flex-shrink-0">
@@ -162,30 +106,6 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                     {problem.description}
                   </p>
-
-                  {/* Problem Metadata */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {problem.category}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      정답률: {problem.acceptance_rate}%
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
-                      <span>정답률</span>
-                      <span>{problem.acceptance_rate}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${problem.acceptance_rate}%` }}
-                      ></div>
-                    </div>
-                  </div>
 
                   {/* Action Button */}
                   <button 
