@@ -7,6 +7,7 @@ import asyncio
 import uuid
 from typing import Dict, Optional, List
 from datetime import datetime
+import os
 
 from . import SubmissionRequest, JudgeResult, ProblemConfig, TestCase
 from .graders import create_grader
@@ -211,14 +212,32 @@ class JudgeManager:
         # 문제 찾기
         problem = self.problems.get(submission.problem_id)
         if not problem:
-            return JudgeResult(
-                submission_id=submission_id,
-                verdict="IE",
-                score=0.0,
-                max_score=0.0,
-                compilation_log=f"Problem {submission.problem_id} not found",
-                test_cases=[]
-            )
+            # DB에서 테스트 케이스 로드
+            print(f"⚠️ Problem {submission.problem_id} not found in cache, loading from DB")
+            problem = await self._load_problem_from_db(submission.problem_id)
+            if problem:
+                self.problems[submission.problem_id] = problem
+            else:
+                # DB에도 없으면 기본 문제 생성
+                print(f"⚠️ Problem {submission.problem_id} not in DB, creating default problem")
+                problem = ProblemConfig(
+                    problem_id=submission.problem_id,
+                    title=f"Problem {submission.problem_id}",
+                    time_limit=2.0,
+                    memory_limit=256,
+                    checker_type="standard",
+                    test_cases=[
+                        TestCase(
+                            case_id="1",
+                            input_data="",
+                            expected_output="",
+                            score=100.0,
+                            time_limit=2.0,
+                            memory_limit=256
+                        )
+                    ]
+                )
+                self.problems[submission.problem_id] = problem
         
         # 채점기 생성
         grader_type = "standard"  # 기본값
@@ -241,6 +260,67 @@ class JudgeManager:
         result.submission_id = submission_id
         
         return result
+    
+    async def _load_problem_from_db(self, problem_id: str) -> Optional[ProblemConfig]:
+        """DB에서 문제와 테스트 케이스 로드"""
+        try:
+            import asyncpg
+            
+            # DB 연결 설정
+            db_host = os.getenv('DB_HOST', 'my-app-db')
+            db_user = os.getenv('DB_USER', 'postgres')
+            db_password = os.getenv('DB_PASSWORD', 'root')
+            db_name = os.getenv('DB_NAME', 'postgres')
+            
+            conn = await asyncpg.connect(
+                host=db_host,
+                user=db_user,
+                password=db_password,
+                database=db_name
+            )
+            
+            # 테스트 케이스 조회
+            rows = await conn.fetch('''
+                SELECT case_number, input_data, expected_output, 
+                       time_limit, memory_limit, score
+                FROM test_cases
+                WHERE problem_id = $1
+                ORDER BY case_number
+            ''', int(problem_id))
+            
+            await conn.close()
+            
+            if not rows:
+                return None
+            
+            # TestCase 객체 리스트 생성
+            test_cases = []
+            for row in rows:
+                test_cases.append(TestCase(
+                    case_id=str(row['case_number']),
+                    input_data=row['input_data'],
+                    expected_output=row['expected_output'],
+                    score=float(row['score']),
+                    time_limit=float(row['time_limit']),
+                    memory_limit=int(row['memory_limit'])
+                ))
+            
+            # ProblemConfig 생성
+            problem = ProblemConfig(
+                problem_id=problem_id,
+                title=f"Problem {problem_id}",
+                time_limit=2.0,
+                memory_limit=256,
+                checker_type="standard",
+                test_cases=test_cases
+            )
+            
+            print(f"✅ Loaded {len(test_cases)} test cases for problem {problem_id}")
+            return problem
+            
+        except Exception as e:
+            print(f"❌ Error loading problem {problem_id} from DB: {e}")
+            return None
     
     def add_problem(self, problem: ProblemConfig):
         """문제 추가"""

@@ -536,8 +536,16 @@ print(solution())`;
                       <span className="font-medium">{submissionResult.verdict}</span>
                     </div>
                     <div className="text-sm">
-                      <span className="mr-4">시간: {submissionResult.execution_time}ms</span>
-                      <span>메모리: {submissionResult.memory_usage}KB</span>
+                      <span className="mr-4">
+                        시간: {submissionResult.execution_time >= 1000 
+                          ? `${(submissionResult.execution_time / 1000).toFixed(2)}초`
+                          : `${submissionResult.execution_time.toFixed(0)}ms`}
+                      </span>
+                      <span>
+                        메모리: {submissionResult.memory_usage >= 1024 
+                          ? `${(submissionResult.memory_usage / 1024).toFixed(1)}MB`
+                          : `${submissionResult.memory_usage}KB`}
+                      </span>
                     </div>
                   </div>
                 </div>

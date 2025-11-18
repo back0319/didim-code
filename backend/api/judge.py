@@ -64,6 +64,73 @@ async def submit_for_judging(request: JudgeSubmissionRequest):
         raise HTTPException(status_code=500, detail=f"Submission failed: {str(e)}")
 
 
+@router.post("/api/judge/submit-sync")
+async def submit_for_judging_sync(request: JudgeSubmissionRequest):
+    """코드 제출하여 채점 (동기식 - 결과 포함 반환)"""
+    try:
+        submission = SubmissionRequest(
+            problem_id=request.problem_id,
+            language=request.language,
+            source_code=request.source_code,
+            user_id=request.user_id
+        )
+        
+        # 제출 및 채점 실행
+        submission_id = await judge_manager.submit(submission)
+        
+        # 결과가 나올 때까지 대기 (최대 30초)
+        import asyncio
+        max_wait = 30
+        wait_interval = 0.5
+        elapsed = 0
+        
+        result = None
+        while elapsed < max_wait:
+            result = await judge_manager.get_result(submission_id)
+            if result is not None:
+                break
+            await asyncio.sleep(wait_interval)
+            elapsed += wait_interval
+        
+        if result is None:
+            # 타임아웃 - 아직 처리 중
+            return {
+                "submission_id": submission_id,
+                "verdict": "Pending",
+                "execution_time": 0,
+                "memory_usage": 0,
+                "output": "",
+                "error": "Judging timeout",
+                "test_results": []
+            }
+        
+        # 테스트 결과 포맷팅
+        test_results = []
+        for tc in result.test_cases:
+            test_results.append({
+                "case_id": tc.case_id,
+                "verdict": tc.verdict,
+                "score": tc.score,
+                "max_score": tc.max_score,
+                "execution_time": tc.execution_time,
+                "memory_usage": tc.memory_usage,
+                "message": tc.message
+            })
+        
+        return {
+            "submission_id": submission_id,
+            "verdict": result.verdict,
+            "execution_time": result.total_time,
+            "memory_usage": result.peak_memory,
+            "output": result.compilation_log or "",
+            "error": result.compilation_log if result.verdict == "CE" else "",
+            "test_results": test_results
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Submission failed: {str(e)}")
+
+
 @router.get("/api/judge/result/{submission_id}", response_model=JudgeResultResponse)
 async def get_judge_result(submission_id: str, include_test_cases: bool = False):
     """채점 결과 조회"""
