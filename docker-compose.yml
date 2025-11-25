@@ -19,6 +19,11 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_HOST=my-app-db
+      - DB_USER=postgres
+      - DB_PASSWORD=root
+      - DB_NAME=postgres
     networks:
       - app-network
 

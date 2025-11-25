@@ -662,6 +662,8 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
     setError(null);
 
     try {
+      console.log('시각화 요청:', { code: code.substring(0, 50), language, inputData });
+      
       const response = await fetch('/api/visualize', {
         method: 'POST',
         headers: {
@@ -674,11 +676,16 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
         })
       });
 
+      console.log('시각화 응답 상태:', response.status);
+
       if (!response.ok) {
-        throw new Error('시각화 생성에 실패했습니다.');
+        const errorText = await response.text();
+        console.error('시각화 API 에러:', errorText);
+        throw new Error(`시각화 생성 실패 (상태 코드: ${response.status})`);
       }
 
       const data = await response.json();
+      console.log('시각화 데이터 수신:', data);
       setVisualizationData(data);
       setCurrentStep(0);
     } catch (error) {

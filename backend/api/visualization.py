@@ -207,7 +207,7 @@ def simulate_execution(code: str, input_data: str = "") -> List[Step]:
     return steps
 
 
-@router.post("/visualize", response_model=VisualizationResponse)
+@router.post("/api/visualize", response_model=VisualizationResponse)
 async def visualize_code(request: VisualizationRequest):
     """코드 실행 과정을 시각화"""
     
@@ -244,7 +244,7 @@ async def visualize_code(request: VisualizationRequest):
         raise HTTPException(status_code=500, detail=f"Visualization failed: {str(e)}")
 
 
-@router.get("/visualize/test")
+@router.get("/api/visualize/test")
 async def test_visualization():
     """시각화 기능 테스트"""
     test_code = """# A+B 문제 해결

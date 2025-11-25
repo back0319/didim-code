@@ -81,7 +81,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const submissionId = dbResult.rows[0].id;
     console.log('제출 기록 저장 완료, ID:', submissionId);
 
-    // 3. 응답 반환
+    // 3. GPT 피드백 요청 (백그라운드 - 기다리지 않음)
+    let feedbackPromise = null;
+    try {
+      // 문제 설명 가져오기
+      const problemQuery = 'SELECT description FROM problems WHERE id = $1';
+      const problemResult = await pool.query(problemQuery, [problem_id]);
+      const problemDescription = problemResult.rows[0]?.description || '문제 설명 없음';
+
+      // GPT 피드백 요청 (비동기로 시작하고 기다리지 않음)
+      feedbackPromise = fetch(`${backendUrl}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          code: code,
+          problem_id: problem_id,
+          problem_description: problemDescription,
+          language: language,
+          verdict: executeResult.verdict || 'AC',
+          execution_time: executeResult.execution_time || 0,
+          memory_usage: executeResult.memory_usage || 0
+        })
+      }).then(async (response) => {
+        if (response.ok) {
+          const feedbackResult = await response.json();
+          console.log('GPT 피드백 생성 완료:', feedbackResult);
+          
+          // 피드백을 DB에 저장
+          for (const feedback of feedbackResult.feedback) {
+            await pool.query(
+              `INSERT INTO feedbacks (submission_id, type, title, message, severity, priority, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+              [submissionId, feedback.type, feedback.title, feedback.message, feedback.severity, feedback.priority || 99]
+            );
+          }
+        }
+      }).catch(err => {
+        console.error('GPT 피드백 생성 오류:', err);
+      });
+    } catch (err) {
+      console.error('피드백 요청 중 오류:', err);
+    }
+
+    // 4. 응답 반환 (피드백 완료를 기다리지 않음)
     res.status(200).json({
       submission_id: submissionId,
       verdict: executeResult.verdict,
@@ -89,7 +134,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       memory_usage: executeResult.memory_usage,
       output: executeResult.output,
       error: executeResult.error,
-      test_results: executeResult.test_results
+      test_results: executeResult.test_results,
+      feedback_pending: true  // 피드백이 백그라운드에서 처리 중임을 표시
     });
 
   } catch (error) {

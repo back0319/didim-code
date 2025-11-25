@@ -22,10 +22,22 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
+        source: '/api/judge/:path*',
         destination: process.env.NODE_ENV === 'production' 
-          ? 'http://backend:8000/:path*' 
-          : 'http://localhost:8000/:path*'
+          ? 'http://backend:8000/api/judge/:path*' 
+          : 'http://localhost:8000/api/judge/:path*'
+      },
+      {
+        source: '/api/analyze/:path*',
+        destination: process.env.NODE_ENV === 'production' 
+          ? 'http://backend:8000/api/analyze/:path*' 
+          : 'http://localhost:8000/api/analyze/:path*'
+      },
+      {
+        source: '/api/visualize',
+        destination: process.env.NODE_ENV === 'production' 
+          ? 'http://backend:8000/api/visualize' 
+          : 'http://localhost:8000/api/visualize'
       }
     ]
   }

@@ -11,6 +11,7 @@ import json
 from api.execution import router as execution_router
 from api.judge import router as judge_router
 from api.visualization import router as visualization_router
+from api.analysis import router as analysis_router
 
 # DMOJ 채점 시스템 초기화
 from judge_system.manager import judge_manager
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(execution_router)
 app.include_router(judge_router)
 app.include_router(visualization_router)
+app.include_router(analysis_router)
 
 # 앱 시작/종료 이벤트 핸들러
 @app.on_event("startup")
