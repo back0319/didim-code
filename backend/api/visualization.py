@@ -116,6 +116,44 @@ def analyze_complexity(code: str) -> ComplexityInfo:
 
 def simulate_execution(code: str, input_data: str = "") -> List[Step]:
     """코드 실행을 실제로 추적하여 단계별 정보 생성"""
+    
+    # Python 내장 함수, 키워드, 모듈 목록
+    PYTHON_BUILTINS = {
+        # 내장 함수
+        'abs', 'all', 'any', 'ascii', 'bin', 'bool', 'bytearray', 'bytes',
+        'callable', 'chr', 'classmethod', 'compile', 'complex', 'delattr',
+        'dict', 'dir', 'divmod', 'enumerate', 'eval', 'exec', 'filter',
+        'float', 'format', 'frozenset', 'getattr', 'globals', 'hasattr',
+        'hash', 'help', 'hex', 'id', 'input', 'int', 'isinstance',
+        'issubclass', 'iter', 'len', 'list', 'locals', 'map', 'max',
+        'memoryview', 'min', 'next', 'object', 'oct', 'open', 'ord',
+        'pow', 'print', 'property', 'range', 'repr', 'reversed', 'round',
+        'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum',
+        'super', 'tuple', 'type', 'vars', 'zip',
+        # 내장 상수
+        'False', 'True', 'None', 'NotImplemented', 'Ellipsis',
+        # 내장 예외
+        'BaseException', 'Exception', 'ArithmeticError', 'AssertionError',
+        'AttributeError', 'EOFError', 'FloatingPointError', 'GeneratorExit',
+        'ImportError', 'IndentationError', 'IndexError', 'KeyError',
+        'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError',
+        'NotImplementedError', 'OSError', 'OverflowError', 'RecursionError',
+        'ReferenceError', 'RuntimeError', 'StopIteration', 'SyntaxError',
+        'SystemError', 'SystemExit', 'TabError', 'TypeError', 'UnboundLocalError',
+        'UnicodeError', 'ValueError', 'ZeroDivisionError',
+        # 특수 변수
+        '__name__', '__doc__', '__package__', '__loader__', '__spec__',
+        '__annotations__', '__builtins__', '__file__', '__cached__'
+    }
+    
+    def filter_user_variables(variables: Dict[str, Any]) -> Dict[str, Any]:
+        """사용자 정의 변수만 필터링 (__return__은 유지)"""
+        return {
+            name: value
+            for name, value in variables.items()
+            if (name not in PYTHON_BUILTINS and not name.startswith('__')) or name == '__return__'
+        }
+    
     try:
         # 프레임 추적기를 사용하여 실제 실행 추적
         traces = trace_execution(code, input_data)
@@ -164,18 +202,20 @@ def simulate_execution(code: str, input_data: str = "") -> List[Step]:
             globals_vars = trace.get('globals', {})
             locals_vars = trace['encoded_locals']
             
-            # 전역과 로컬 변수를 합친 변수 딕셔너리
+            # 전역과 로컬 변수를 합친 후 필터링
             all_variables = {**globals_vars, **locals_vars}
+            filtered_variables = filter_user_variables(all_variables)
             
             step = Step(
                 line=trace['line'],
                 operation=operation,
-                variables=all_variables,  # 모든 변수 (호환성 유지)
+                variables=filtered_variables,  # 필터링된 변수만 포함
+                output=trace.get('output', ''),  # 출력 추가
                 description=description,
                 func_name=trace.get('func_name'),
                 stack_frames=stack_frames,
-                globals_vars=globals_vars,
-                current_blocks=trace.get('current_blocks', [])  # 블록 구조 정보 추가
+                globals_vars=filter_user_variables(globals_vars),  # globals도 필터링
+                current_blocks=trace.get('current_blocks', [])
             )
             
             steps.append(step)

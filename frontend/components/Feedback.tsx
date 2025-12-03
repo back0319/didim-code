@@ -119,7 +119,7 @@ const Feedback: React.FC<FeedbackProps> = ({
               <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
               </svg>
-              <h4 className="text-sm font-semibold text-gray-900">AI 분석 결과 ({aiFeedback.length}개)</h4>
+              <h4 className="text-sm font-semibold text-gray-900">AI 분석 결과</h4>
             </div>
             
             {aiFeedback.map((feedback, index) => (

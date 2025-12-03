@@ -106,6 +106,8 @@ async def submit_for_judging_sync(request: JudgeSubmissionRequest):
         
         # 테스트 결과 포맷팅
         test_results = []
+        all_outputs = []  # 모든 테스트 케이스의 출력 수집
+        
         for tc in result.test_cases:
             test_results.append({
                 "case_id": tc.case_id,
@@ -116,13 +118,20 @@ async def submit_for_judging_sync(request: JudgeSubmissionRequest):
                 "memory_usage": tc.memory_usage,
                 "message": tc.message
             })
+            
+            # 실제 출력이 있으면 수집
+            if hasattr(tc, 'actual_output') and tc.actual_output:
+                all_outputs.append(f"=== Test Case {tc.case_id} ===\n{tc.actual_output}")
+        
+        # 모든 출력을 하나로 합치기
+        combined_output = "\n\n".join(all_outputs) if all_outputs else ""
         
         return {
             "submission_id": submission_id,
             "verdict": result.verdict,
             "execution_time": result.total_time,
             "memory_usage": result.peak_memory,
-            "output": result.compilation_log or "",
+            "output": combined_output or result.compilation_log or "",
             "error": result.compilation_log if result.verdict == "CE" else "",
             "test_results": test_results
         }

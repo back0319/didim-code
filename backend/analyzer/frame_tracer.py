@@ -247,19 +247,39 @@ class FrameTracer(bdb.Bdb):
     def __init__(self, code: str = ""):
         super().__init__()
         self.traces = []
+        self.code = code
+        self.code_lines = code.split('\n') if code else []
         self.current_line = 0
+        self.previous_line = 0
         self.all_globals_in_order = []
         self.frame_stack = []
+        self.output_buffer = []  # print 출력 버퍼 추가
         # 블록 구조 분석기 추가
         self.block_analyzer = BlockStructureAnalyzer(code) if code else None
         
     def user_line(self, frame):
         """라인별 실행 시 호출"""
-        self.current_line = frame.f_lineno
+        current_line = frame.f_lineno
         
         # 사용자 코드가 아닌 경우 무시
         if not self._is_user_code(frame):
             return
+        
+        # else/elif 라인 감지 및 삽입
+        # Python 디버거는 else/elif 라인 자체를 추적하지 않으므로 수동으로 추가
+        if self.previous_line > 0 and current_line > self.previous_line:
+            # 이전 라인과 현재 라인 사이의 모든 라인 확인
+            for line_num in range(self.previous_line + 1, current_line):
+                if line_num <= len(self.code_lines):
+                    line_content = self.code_lines[line_num - 1].strip()
+                    # else나 elif는 실행되지 않고 건너뛰므로 트레이스에 추가
+                    if line_content.startswith('else:') or line_content == 'else:' or line_content.startswith('elif '):
+                        # else/elif 라인의 트레이스 엔트리 추가
+                        control_trace = self._create_trace_entry(frame, override_line=line_num)
+                        self.traces.append(control_trace)
+        
+        self.previous_line = current_line
+        self.current_line = current_line
             
         trace_entry = self._create_trace_entry(frame)
         self.traces.append(trace_entry)
@@ -289,7 +309,7 @@ class FrameTracer(bdb.Bdb):
         filename = frame.f_code.co_filename
         return filename == '<string>' or filename.endswith('user_code.py')
         
-    def _create_trace_entry(self, frame, event_type='line', return_value=None):
+    def _create_trace_entry(self, frame, event_type='line', return_value=None, override_line=None):
         """트레이스 엔트리 생성"""
         # 현재 프레임의 로컬 변수
         encoded_locals = {}
@@ -337,11 +357,12 @@ class FrameTracer(bdb.Bdb):
         
         # 현재 라인의 블록 구조 정보 추가
         current_blocks = []
+        line_number = override_line if override_line else frame.f_lineno
         if self.block_analyzer:
-            current_blocks = self.block_analyzer.get_current_blocks(frame.f_lineno)
+            current_blocks = self.block_analyzer.get_current_blocks(line_number)
             
         return {
-            'line': frame.f_lineno,
+            'line': line_number,
             'event': event_type,
             'func_name': func_name,
             'encoded_locals': encoded_locals,
@@ -349,7 +370,8 @@ class FrameTracer(bdb.Bdb):
             'globals': encoded_globals,
             'ordered_globals': [k for k in self.all_globals_in_order if k in encoded_globals],
             'stack_to_render': self._get_stack_frames(),
-            'current_blocks': current_blocks  # 블록 구조 정보 추가
+            'current_blocks': current_blocks,  # 블록 구조 정보 추가
+            'output': '\n'.join(self.output_buffer)  # 현재까지의 출력 추가
         }
         
     def _get_stack_frames(self):
@@ -424,11 +446,17 @@ def trace_execution(code: str, input_data: str = "") -> List[Dict]:
         def mock_input(prompt=""):
             return ""
     
+    # print 함수를 output_buffer에 저장
+    def mock_print(*args, **kwargs):
+        sep = kwargs.get('sep', ' ')
+        output = sep.join(str(arg) for arg in args)
+        tracer.output_buffer.append(output)
+    
     # 실행 환경 설정
     globals_dict = {
         '__builtins__': __builtins__,
         'input': mock_input,
-        'print': lambda *args, **kwargs: None  # print 출력 무시
+        'print': mock_print  # print 출력을 버퍼에 저장
     }
     
     try:

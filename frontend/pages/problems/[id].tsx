@@ -22,6 +22,12 @@ const VisualizationModal = dynamic(() => import('../../components/VisualizationM
   loading: () => null,
 });
 
+interface TestCase {
+  input: string;
+  output: string;
+  explanation?: string;
+}
+
 interface Problem {
   id: number;
   title: string;
@@ -30,6 +36,7 @@ interface Problem {
   category: string;
   paradigms: string[];
   expected_complexity: string;
+  test_cases?: TestCase[];
   input?: string;
   output?: string;
   input_examples?: string[];
@@ -126,7 +133,36 @@ print(solution())`;
     setIsAnalyzing(false);
     
     try {
-      // 1. 코드 제출 및 채점
+      // 1. 먼저 사용자 입력 데이터로 코드 실행하여 실행 결과 표시
+      try {
+        const runResponse = await fetch('/api/run', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: code,
+            language: 'python',
+            input_data: inputForVisualization
+          })
+        });
+
+        if (runResponse.ok) {
+          const runData = await runResponse.json();
+          setRunResult({
+            success: runData.success || false,
+            output: runData.output || '',
+            error: runData.error || '',
+            executionTime: runData.execution_time || 0,
+            memoryUsage: runData.memory_usage || 0
+          });
+        }
+      } catch (runError) {
+        console.error('실행 오류:', runError);
+        // 실행 실패해도 제출은 계속 진행
+      }
+
+      // 2. 코드 제출 및 채점
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: {
@@ -145,7 +181,7 @@ print(solution())`;
 
       const result = await response.json();
       
-      // 2. 기본 채점 결과 표시
+      // 3. 기본 채점 결과 표시
       setSubmissionResult({
         id: result.submission_id,
         verdict: result.verdict || 'Pending',
@@ -154,7 +190,7 @@ print(solution())`;
         feedback: []
       });
 
-      // 3. 피드백이 생성 중이면 폴링 시작
+      // 4. 피드백이 생성 중이면 폴링 시작
       if (result.feedback_pending) {
         setIsAnalyzing(true);
         pollFeedback(result.submission_id);
@@ -364,9 +400,34 @@ print(solution())`;
                 <div className="space-y-4">
                   <h4 className="text-lg font-semibold text-gray-900">입출력 예시</h4>
                   
-                  {/* 예시가 있는 경우 */}
-                  {problem.input_examples && problem.output_examples && 
+                  {problem.test_cases && problem.test_cases.length > 0 ? (
+                    /* test_cases 배열 사용 (새로운 방식) - 최대 2개만 표시 */
+                    <div className="space-y-4">
+                      {problem.test_cases.slice(0, 2).map((testCase, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                            <span className="font-semibold text-gray-700">예시 {index + 1}</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                            <div className="p-4">
+                              <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
+                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                                {testCase.input}
+                              </pre>
+                            </div>
+                            <div className="p-4">
+                              <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
+                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                                {testCase.output}
+                              </pre>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : problem.input_examples && problem.output_examples && 
                    problem.input_examples.length > 0 && problem.output_examples.length > 0 ? (
+                    /* input_examples 배열이 있을 때 (이전 방식) */
                     <div className="space-y-4">
                       {problem.input_examples.map((input, index) => (
                         <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -376,57 +437,47 @@ print(solution())`;
                           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
                             <div className="p-4">
                               <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
-                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
+                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
                                 {input}
                               </pre>
                             </div>
                             <div className="p-4">
                               <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
-                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto">
+                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
                                 {problem.output_examples?.[index] || ''}
                               </pre>
                             </div>
                           </div>
-                          {problem.example_explanation && (
-                            <div className="bg-blue-50 px-4 py-3 border-t border-gray-200">
-                              <div className="text-sm font-medium text-blue-800 mb-1">설명</div>
-                              <div className="text-sm text-blue-700">
-                                {problem.example_explanation}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    /* 데이터베이스의 input/output 컬럼 사용 */
+                  ) : problem.input && problem.output ? (
+                    /* 데이터베이스의 input/output 컬럼 사용 (레거시) */
                     <div className="space-y-4">
-                      {problem.input && problem.output ? (
-                        <div className="border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                            <span className="font-semibold text-gray-700">예시</span>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                          <span className="font-semibold text-gray-700">예시</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                          <div className="p-4">
+                            <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
+                            <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                              {problem.input}
+                            </pre>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
-                            <div className="p-4">
-                              <div className="text-sm font-medium text-gray-600 mb-2">입력</div>
-                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-line">
-                                {problem.input}
-                              </pre>
-                            </div>
-                            <div className="p-4">
-                              <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
-                              <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-line">
-                                {problem.output}
-                              </pre>
-                            </div>
+                          <div className="p-4">
+                            <div className="text-sm font-medium text-gray-600 mb-2">출력</div>
+                            <pre className="bg-gray-100 p-3 rounded text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                              {problem.output}
+                            </pre>
                           </div>
                         </div>
-                      ) : (
-                        /* 입출력 데이터가 없는 경우 */
-                        <div className="text-center text-gray-500 py-8">
-                          입출력 예시가 준비되지 않았습니다.
-                        </div>
-                      )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* 입출력 데이터가 없는 경우 */
+                    <div className="text-center text-gray-500 py-8">
+                      입출력 예시가 준비되지 않았습니다.
                     </div>
                   )}
                 </div>
@@ -439,9 +490,6 @@ print(solution())`;
                 {/* 제목 */}
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">코드 에디터 (Python)</h3>
-                  <div className="text-sm text-gray-500">
-                    Ctrl+Enter로 실행, Ctrl+S로 저장
-                  </div>
                 </div>
 
                 {/* Monaco Editor */}
@@ -548,7 +596,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const query = `
       SELECT 
         id, title, description, difficulty, category,
-        paradigms, expected_complexity, input, output
+        paradigms, expected_complexity, input, output, test_cases
       FROM problems 
       WHERE id = $1
     `;
@@ -590,6 +638,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       category: problemResult.rows[0].category || '',
       paradigms: problemResult.rows[0].paradigms || [],
       expected_complexity: problemResult.rows[0].expected_complexity || 'O(n)',
+      test_cases: problemResult.rows[0].test_cases || null,
       input: problemResult.rows[0].input || '',
       output: problemResult.rows[0].output || ''
     };
