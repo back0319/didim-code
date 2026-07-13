@@ -130,3 +130,4 @@ venv.bak/
 # Docker
 .dockerignore
 ./pgdata
+.vercel
