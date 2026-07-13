@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Monaco Editor를 위한 설정
     config.module.rules.push({
@@ -18,28 +17,6 @@ const nextConfig = {
     };
 
     return config;
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/judge/:path*',
-        destination: process.env.NODE_ENV === 'production' 
-          ? 'http://backend:8000/api/judge/:path*' 
-          : 'http://localhost:8000/api/judge/:path*'
-      },
-      {
-        source: '/api/analyze/:path*',
-        destination: process.env.NODE_ENV === 'production' 
-          ? 'http://backend:8000/api/analyze/:path*' 
-          : 'http://localhost:8000/api/analyze/:path*'
-      },
-      {
-        source: '/api/visualize',
-        destination: process.env.NODE_ENV === 'production' 
-          ? 'http://backend:8000/api/visualize' 
-          : 'http://localhost:8000/api/visualize'
-      }
-    ]
   }
 }
 

@@ -137,7 +137,8 @@ docker-compose -f docker-compose-new.yml down
 
 ### Frontend (.env.local)
 ```
-NEXT_PUBLIC_API_URL=http://localhost:8000
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-5.6-luna
 ```
 
 ### Backend
@@ -153,6 +154,31 @@ ENVIRONMENT=development
 - **Backend**: Python 3.11 Slim 기반
 
 ## 🚀 배포
+
+### Vercel 포트폴리오 배포
+
+`codex/vercel-deploy` 브랜치는 기존 화면과 Monaco Editor를 유지하면서 Vercel에 맞게 구성한 배포 버전입니다.
+
+- 문제·예시 풀이·테스트 케이스·기존 피드백은 `frontend/data/catalog.json` 정적 데이터로 사용합니다.
+- PostgreSQL이나 Supabase는 사용하지 않습니다.
+- Python 실행은 Vercel Sandbox의 격리된 Python 3.13 환경에서 처리합니다.
+- AI 피드백은 서버 측 `/api/submit`에서 OpenAI Responses API로 생성합니다.
+- `OPENAI_API_KEY`는 Vercel의 민감 환경변수로만 설정해야 합니다.
+
+CSV 백업을 다시 변환하려면 다음 명령을 실행합니다.
+
+```bash
+cd frontend
+npm run data:convert -- /path/to/cs-database.zip
+```
+
+로컬 빌드 검증:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
 
 ### Docker Compose를 사용한 프로덕션 배포
 ```bash

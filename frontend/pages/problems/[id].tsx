@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { GetServerSideProps } from 'next';
+import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import Layout from '../../components/Layout';
 import CodeRunner from '../../components/CodeRunner';
 import Feedback from '../../components/Feedback';
+import { getExemplarsByProblemId, getProblemById, getProblems } from '../../lib/catalog';
 
 // Monaco Editor를 동적으로 로드 (SSR 이슈 방지)
 const MonacoEditor = dynamic(() => import('../../components/MonacoEditor'), {
@@ -130,7 +131,7 @@ print(solution())`;
     }
 
     setIsSubmitting(true);
-    setIsAnalyzing(false);
+    setIsAnalyzing(true);
     
     try {
       // 1. 먼저 사용자 입력 데이터로 코드 실행하여 실행 결과 표시
@@ -187,17 +188,19 @@ print(solution())`;
         verdict: result.verdict || 'Pending',
         execution_time: result.execution_time || 0,
         memory_usage: result.memory_usage || 0,
-        feedback: []
+        feedback: result.feedback || []
       });
 
       // 4. 피드백이 생성 중이면 폴링 시작
       if (result.feedback_pending) {
-        setIsAnalyzing(true);
         pollFeedback(result.submission_id);
+      } else {
+        setIsAnalyzing(false);
       }
 
     } catch (error) {
       console.error('제출 오류:', error);
+      setIsAnalyzing(false);
       alert('제출 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
@@ -578,93 +581,23 @@ print(solution())`;
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { id } = context.params!;
-  
-  try {
-    // API 함수를 직접 import하여 사용
-    const { Pool } = await import('pg');
-    
-    const pool = new Pool({
-      user: 'postgres',
-      host: process.env.NODE_ENV === 'production' ? 'my-app-db' : 'localhost',
-      database: 'postgres',
-      password: 'root',
-      port: 5432,
-    });
+export const getStaticPaths: GetStaticPaths = async () => ({
+  paths: getProblems().map((problem) => ({ params: { id: String(problem.id) } })),
+  fallback: false,
+});
 
-    const query = `
-      SELECT 
-        id, title, description, difficulty, category,
-        paradigms, expected_complexity, input, output, test_cases
-      FROM problems 
-      WHERE id = $1
-    `;
+export const getStaticProps: GetStaticProps<ProblemSolvePageProps> = async (context) => {
+  const id = Number(context.params?.id);
+  const problem = getProblemById(id);
+  const solutions = getExemplarsByProblemId(id).map((solution) => ({
+    id: solution.id,
+    type: solution.type,
+    code: solution.code,
+    complexity: solution.complexity,
+    explanation: solution.explanation || '',
+  }));
 
-    const solutionsQuery = `
-      SELECT 
-        id, type, code, complexity, explanation
-      FROM exemplars 
-      WHERE problem_id = $1
-      ORDER BY 
-        CASE 
-          WHEN type = 'optimal' THEN 1
-          WHEN type = 'naive' THEN 2
-          ELSE 3
-        END
-    `;
-
-    const [problemResult, solutionsResult] = await Promise.all([
-      pool.query(query, [id]),
-      pool.query(solutionsQuery, [id])
-    ]);
-    
-    await pool.end();
-    
-    if (problemResult.rows.length === 0) {
-      return {
-        props: {
-          problem: null,
-          solutions: []
-        }
-      };
-    }
-
-    const problem = {
-      id: problemResult.rows[0].id,
-      title: problemResult.rows[0].title,
-      description: problemResult.rows[0].description,
-      difficulty: problemResult.rows[0].difficulty as 'Easy' | 'Medium' | 'Hard',
-      category: problemResult.rows[0].category || '',
-      paradigms: problemResult.rows[0].paradigms || [],
-      expected_complexity: problemResult.rows[0].expected_complexity || 'O(n)',
-      test_cases: problemResult.rows[0].test_cases || null,
-      input: problemResult.rows[0].input || '',
-      output: problemResult.rows[0].output || ''
-    };
-
-    const solutions = solutionsResult.rows.map((row: any) => ({
-      id: row.id,
-      type: row.type,
-      code: row.code,
-      complexity: row.complexity,
-      explanation: row.explanation || ''
-    }));
-
-    return {
-      props: {
-        problem,
-        solutions
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching problem:', error);
-    
-    return {
-      props: {
-        problem: null,
-        solutions: []
-      }
-    };
-  }
+  return {
+    props: { problem, solutions },
+  };
 };
