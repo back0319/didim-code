@@ -17,9 +17,20 @@ interface Step {
   func_name?: string;
 }
 
+interface CallTreeNode {
+  id: number;
+  parent_id: number | null;
+  func_name: string;
+  arguments: Record<string, any>;
+  call_step: number;
+  return_step: number | null;
+  return_value: any;
+}
+
 interface VisualizationData {
   steps: Step[];
   code_lines: string[];
+  call_tree?: CallTreeNode[];
 }
 
 const VisualizationModal: React.FC<VisualizationModalProps> = ({
@@ -104,6 +115,106 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
       return null;
     }
     return visualizationData.steps[currentStep];
+  };
+
+  const formatCallValue = (value: any): string => {
+    if (value === null) return 'None';
+    if (typeof value === 'string') return `"${value}"`;
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
+  const renderCallTree = () => {
+    if (!visualizationData?.call_tree) return null;
+
+    const visibleCalls = visualizationData.call_tree.filter(
+      (call) => call.call_step <= currentStep,
+    );
+    if (visibleCalls.length === 0) return null;
+
+    const visibleIds = new Set(visibleCalls.map((call) => call.id));
+    const childrenByParent = new Map<number | null, CallTreeNode[]>();
+    visibleCalls.forEach((call) => {
+      const parentId = call.parent_id !== null && visibleIds.has(call.parent_id)
+        ? call.parent_id
+        : null;
+      const children = childrenByParent.get(parentId) || [];
+      children.push(call);
+      childrenByParent.set(parentId, children);
+    });
+
+    const stackFrames = getCurrentStep()?.stack_frames || [];
+    const activeFrameCallIds = stackFrames
+      .map((frame: any) => frame.call_id)
+      .filter((callId: any): callId is number => typeof callId === 'number');
+    const activeCallIds = new Set<number>(activeFrameCallIds);
+    const currentCallId = activeFrameCallIds[activeFrameCallIds.length - 1];
+
+    const renderNode = (call: CallTreeNode, depth: number): React.ReactNode => {
+      const children = childrenByParent.get(call.id) || [];
+      const isCurrent = call.id === currentCallId;
+      const isActive = activeCallIds.has(call.id);
+      const hasReturned = call.return_step !== null && call.return_step <= currentStep;
+      const argumentText = Object.entries(call.arguments || {})
+        .map(([name, value]) => `${name}=${formatCallValue(value)}`)
+        .join(', ');
+      const signature = `${call.func_name}(${argumentText})`;
+
+      const cardStyle = isCurrent
+        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+        : hasReturned
+          ? 'border-green-300 bg-green-50'
+          : isActive
+            ? 'border-indigo-300 bg-indigo-50'
+            : 'border-gray-300 bg-white';
+
+      return (
+        <div key={call.id} className="min-w-0">
+          <div className={`rounded-lg border p-3 shadow-sm ${cardStyle}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono text-sm font-semibold text-gray-900 break-all">
+                {signature}
+              </span>
+              {isCurrent ? (
+                <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                  실행 중
+                </span>
+              ) : hasReturned ? (
+                <span className="rounded-full bg-green-600 px-2 py-0.5 text-xs font-mono font-semibold text-white">
+                  반환 {formatCallValue(call.return_value)}
+                </span>
+              ) : isActive ? (
+                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-800">
+                  하위 호출 대기
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {children.length > 0 && (
+            <div className="ml-3 mt-2 border-l-2 border-indigo-200 pl-3">
+              <div className={children.length > 1 && depth === 0 ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
+                {children.map((child) => renderNode(child, depth + 1))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className="space-y-3">
+        <div>
+          <h4 className="font-semibold text-gray-900">함수 호출 트리</h4>
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">
+            호출된 함수와 인자, 반환값을 누적해서 보여줍니다. 파란색은 현재 실행 중인 호출입니다.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {(childrenByParent.get(null) || []).map((rootCall) => renderNode(rootCall, 0))}
+        </div>
+      </div>
+    );
   };
 
   // 각 함수의 반환값을 추적하는 함수 - 스텝별로 반환값 저장 (인덱스 포함)
@@ -942,7 +1053,9 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
                   <h3 className="font-semibold text-green-900">코드흐름</h3>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4">
-                  {getCurrentFunctions().length > 0 ? (
+                  {visualizationData.call_tree?.some((call) => call.call_step <= currentStep) ? (
+                    renderCallTree()
+                  ) : getCurrentFunctions().length > 0 ? (
                     <div>
                       {renderNestedStructure(getCurrentFunctions(), 0)}
                     </div>

@@ -112,10 +112,41 @@ class FrameTracer(bdb.Bdb):
         self.blocks = BlockAnalyzer(code)
         self.output = []
         self.steps = []
+        self.call_tree = []
+        self.frame_call_ids = {}
+        self.next_call_id = 1
 
     @staticmethod
     def _is_user_frame(frame):
         return frame.f_code.co_filename.endswith("user_code.py")
+
+    @staticmethod
+    def _frame_arguments(frame):
+        code = frame.f_code
+        argument_count = code.co_argcount + code.co_kwonlyargcount
+        argument_names = list(code.co_varnames[:argument_count])
+        next_index = argument_count
+
+        if code.co_flags & 0x04:
+            argument_names.append(code.co_varnames[next_index])
+            next_index += 1
+        if code.co_flags & 0x08:
+            argument_names.append(code.co_varnames[next_index])
+
+        return {
+            name: encode_value(frame.f_locals[name])
+            for name in argument_names
+            if name in frame.f_locals
+        }
+
+    def _parent_call_id(self, frame):
+        current = frame.f_back
+        while current:
+            call_id = self.frame_call_ids.get(id(current))
+            if call_id is not None:
+                return call_id
+            current = current.f_back
+        return None
 
     def _append(self, frame, event, return_value=None):
         if len(self.steps) >= MAX_STEPS:
@@ -185,6 +216,7 @@ class FrameTracer(bdb.Bdb):
                 ordered.extend(sorted(name for name in locals_values if name not in ordered))
                 frames.append({
                     "func_name": name,
+                    "call_id": self.frame_call_ids.get(id(current)),
                     "encoded_locals": locals_values,
                     "ordered_varnames": ordered,
                     "is_highlighted": len(frames) == 0,
@@ -202,11 +234,31 @@ class FrameTracer(bdb.Bdb):
 
     def user_call(self, frame, argument_list):
         if self._is_user_frame(frame):
+            call_id = self.next_call_id
+            self.next_call_id += 1
+            self.frame_call_ids[id(frame)] = call_id
+            self.call_tree.append({
+                "id": call_id,
+                "parent_id": self._parent_call_id(frame),
+                "func_name": frame.f_code.co_name,
+                "arguments": self._frame_arguments(frame),
+                "call_step": len(self.steps),
+                "return_step": None,
+                "return_value": None,
+            })
             self._append(frame, "call")
 
     def user_return(self, frame, return_value):
         if self._is_user_frame(frame):
+            call_id = self.frame_call_ids.get(id(frame))
+            if call_id is not None:
+                for call in reversed(self.call_tree):
+                    if call["id"] == call_id:
+                        call["return_step"] = len(self.steps)
+                        call["return_value"] = encode_value(return_value)
+                        break
             self._append(frame, "return", return_value)
+            self.frame_call_ids.pop(id(frame), None)
 
 
 def analyze_complexity(code):
@@ -322,6 +374,7 @@ def main():
     print(json.dumps({
         "steps": tracer.steps,
         "code_lines": tracer.code_lines,
+        "call_tree": tracer.call_tree,
         "complexity_info": analyze_complexity(code),
     }, ensure_ascii=False))
 

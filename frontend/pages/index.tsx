@@ -17,14 +17,20 @@ const Home: React.FC = () => {
           
           <div className="relative px-4 py-20 md:py-32">
             <div className="max-w-7xl mx-auto text-center">
-              <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-8 leading-tight">
-                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  실행 과정을 확인하고, 힌트로 다시 풀어보세요
+              <h1 className="max-w-6xl mx-auto text-3xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 mb-8 leading-tight">
+                <span className="sm:hidden bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block">알고리즘 문제 풀이</span>
+                  <span className="block mt-1">실행 과정 시각화</span>
+                  <span className="block mt-1">한 가지 핵심 피드백</span>
+                </span>
+                <span className="hidden sm:block bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block">알고리즘 문제 풀이부터</span>
+                  <span className="block mt-2">실행 시각화와 핵심 피드백까지</span>
                 </span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-                DidimCode는 Python 코드의 실행 흐름을 단계별로 보여주고, 정답 대신 핵심 힌트를 제공해 스스로 풀이를 개선하도록 돕습니다.
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+                DidimCode는 Monaco Editor에서 Python 알고리즘 문제를 풀고, 코드의 실행 흐름을 단계별로 시각화하며, 정답 대신 한 가지 핵심 힌트로 풀이를 개선하는 학습 사이트입니다.
               </p>
               
               <div className="flex justify-center">
