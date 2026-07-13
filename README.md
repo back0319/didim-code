@@ -160,7 +160,7 @@ ENVIRONMENT=development
 `vercel-deploy` 브랜치는 기존 화면과 Monaco Editor를 유지하면서 Vercel에 맞게 구성한 배포 버전입니다.
 
 - **Vercel 프로젝트**: `algo-tutor`
-- **배포 주소**: https://algo-tutor.vercel.app
+- **배포 주소**: https://algo-tutor-back0319.vercel.app
 
 - 문제·예시 풀이·테스트 케이스·기존 피드백은 `frontend/data/catalog.json` 정적 데이터로 사용합니다.
 - PostgreSQL이나 Supabase는 사용하지 않습니다.
