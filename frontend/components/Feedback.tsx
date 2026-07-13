@@ -106,9 +106,9 @@ const Feedback: React.FC<FeedbackProps> = ({
           <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
             <div className="flex items-center">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-800 mr-3"></div>
-              <span className="font-medium">AI가 코드를 분석하고 있습니다...</span>
+              <span className="font-medium">핵심 힌트를 준비하고 있습니다...</span>
             </div>
-            <p className="text-sm mt-2 ml-8">복잡도, 코드 품질, 최적화 제안 등을 생성 중입니다.</p>
+            <p className="text-sm mt-2 ml-8">채점 결과를 바탕으로 다음에 확인할 부분을 찾고 있습니다.</p>
           </div>
         )}
 
@@ -119,7 +119,7 @@ const Feedback: React.FC<FeedbackProps> = ({
               <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
               </svg>
-              <h4 className="text-sm font-semibold text-gray-900">AI 분석 결과</h4>
+              <h4 className="text-sm font-semibold text-gray-900">다음 시도를 위한 힌트</h4>
             </div>
             
             {aiFeedback.map((feedback, index) => (
@@ -155,7 +155,7 @@ const Feedback: React.FC<FeedbackProps> = ({
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-2">AI 피드백 대기 중</h3>
             <p className="text-sm text-gray-500 max-w-sm">
-              코드를 제출하면 AI가 자동으로 분석하여 복잡도, 코드 품질, 최적화 제안 등의 피드백을 제공합니다.
+              코드를 제출하면 채점 결과와 다음에 확인할 핵심 힌트 하나를 보여드립니다.
             </p>
           </div>
         )}

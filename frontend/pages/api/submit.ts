@@ -54,7 +54,7 @@ function extractOutputText(response: any): string {
 
 function fallbackFeedback(verdict: JudgeResult['verdict']): FeedbackItem {
   const messages: Record<JudgeResult['verdict'], string> = {
-    AC: '모든 테스트를 통과했습니다. 풀이의 시간·공간 복잡도를 한 번 더 직접 점검해보세요.',
+    AC: '모든 테스트를 통과했습니다. 작성한 코드가 어떤 순서로 답을 구하는지 스스로 설명해보세요.',
     WA: '일부 입력에서 출력이 다릅니다. 경계값과 조건 분기에서 빠진 경우가 없는지 먼저 확인해보세요.',
     CE: '코드를 실행하기 전에 구문 오류가 발생했습니다. 오류가 표시된 줄의 괄호, 콜론과 들여쓰기를 확인해보세요.',
     RE: '실행 중 오류가 발생했습니다. 인덱스 범위, 자료형과 비어 있는 입력을 먼저 확인해보세요.',
@@ -67,6 +67,10 @@ function fallbackFeedback(verdict: JudgeResult['verdict']): FeedbackItem {
     message: messages[verdict],
     severity: verdict === 'AC' ? 'info' : 'warning',
   };
+}
+
+function containsAdvancedConcepts(text: string): boolean {
+  return /(시간\s*복잡도|공간\s*복잡도|복잡도|big[-\s]?o|o\s*\([^)]*\)|패러다임|최적화|코드\s*품질)/i.test(text);
 }
 
 async function judge(code: string, problemId: number): Promise<JudgeResult> {
@@ -147,7 +151,6 @@ async function createHint(
     : undefined;
   const prompt = [
     `문제 ID: ${problem.id}`,
-    `기대 복잡도: ${problem.expected_complexity}`,
     `실제 채점 결과: ${result.verdict}`,
     failure ? `실패 정보: ${failure.message}` : '모든 CSV 테스트 통과',
     failedTest ? `실패 입력: ${failedTest.input}` : '',
@@ -172,8 +175,10 @@ async function createHint(
           '문제 설명 대신 제공된 CSV 판정과 실패 입력·출력을 사실의 기준으로 사용하세요.',
           '정답 코드, 의사 코드, 완성된 풀이, 테스트의 기대 출력은 절대 제공하지 마세요.',
           '힌트에 테스트의 구체적인 입력값이나 출력값을 그대로 노출하지 마세요.',
+          '시간 복잡도, 공간 복잡도, Big-O, 알고리즘 패러다임, 최적화, 코드 품질은 언급하지 마세요.',
+          '전문 용어는 꼭 필요할 때만 사용하고, 초보자가 바로 다음 코드를 고칠 수 있는 쉬운 표현을 사용하세요.',
           '오답이면 구문, 실행, 시간 초과, 논리 중 판정과 직접 관련된 원인부터 짚으세요.',
-          '정답이면 복잡도나 코드 품질에서 스스로 점검할 한 가지 질문만 제시하세요.',
+          '정답이면 작성한 코드의 동작을 스스로 설명해보도록 한 가지 짧은 질문만 제시하세요.',
           'title은 30자, message는 200자 이내로 작성하세요.',
         ].join(' '),
         input: prompt,
@@ -207,7 +212,7 @@ async function createHint(
     }
 
     const parsed = JSON.parse(extractOutputText(await response.json()));
-    return {
+    const feedback: FeedbackItem = {
       id: 1,
       type: String(parsed.type || '핵심 힌트'),
       title: String(parsed.title || '먼저 확인할 부분').slice(0, 30),
@@ -216,6 +221,12 @@ async function createHint(
         ? parsed.severity
         : result.verdict === 'AC' ? 'info' : 'warning',
     };
+
+    if (containsAdvancedConcepts(`${feedback.title} ${feedback.message}`)) {
+      return fallbackFeedback(result.verdict);
+    }
+
+    return feedback;
   } catch (error) {
     console.error('AI hint error:', error instanceof Error ? error.message : String(error));
     return fallbackFeedback(result.verdict);

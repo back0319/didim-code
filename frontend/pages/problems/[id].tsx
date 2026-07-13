@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
@@ -75,9 +75,16 @@ interface ProblemSolvePageProps {
   solutions: Solution[];
 }
 
+const CODE_TEMPLATE = `def solution():
+    # 여기에 코드를 작성하세요
+    pass
+
+# 예시 실행
+print(solution())`;
+
 export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePageProps) {
   const router = useRouter();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(CODE_TEMPLATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [showSolution, setShowSolution] = useState(false);
@@ -97,23 +104,6 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
     executionTime?: number;
     memoryUsage?: number;
   } | null>(null);
-
-  // 파이썬 코드 템플릿
-  const codeTemplate = `def solution():
-    # 여기에 코드를 작성하세요
-    # 문제: ${problem?.title || ''}
-    # 예상 복잡도: ${problem?.expected_complexity || 'O(n)'}
-    # 적용 패러다임: ${problem?.paradigms?.join(', ') || ''}
-    pass
-
-# 예시 실행
-print(solution())`;
-
-  useEffect(() => {
-    if (problem) {
-      setCode(codeTemplate);
-    }
-  }, [problem]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

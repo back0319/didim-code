@@ -1790,18 +1790,6 @@ const CodeVisualization: React.FC<CodeVisualizationProps> = ({
             </div>
           </div>
         </div>
-
-        {/* 복잡도 정보 */}
-        {visualizationData.complexity_info && (
-          <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
-            <h5 className="font-medium text-purple-900 mb-2">복잡도 분석</h5>
-            <div className="text-purple-800 text-sm space-y-1">
-              <div><strong>시간 복잡도:</strong> {visualizationData.complexity_info.time_complexity}</div>
-              <div><strong>공간 복잡도:</strong> {visualizationData.complexity_info.space_complexity}</div>
-              <div><strong>설명:</strong> {visualizationData.complexity_info.explanation}</div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
