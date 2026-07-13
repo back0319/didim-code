@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { GetServerSideProps } from 'next';
+import { useState } from 'react';
+import { GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import { getProblems } from '../lib/catalog';
 
 interface Problem {
   id: number;
@@ -137,31 +138,18 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  try {
-    // Docker 컨테이너의 API에서 데이터 가져오기 (3000번 포트)
-    const response = await fetch('http://localhost:3000/api/problems');
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch problems: ${response.status}`);
-    }
-    
-    const problems: Problem[] = await response.json();
-    console.log('Fetched problems from Docker:', problems.length);
+export const getStaticProps: GetStaticProps<ProblemsPageProps> = async () => {
+  const problems = getProblems().map((problem) => ({
+    id: problem.id,
+    title: problem.title,
+    description: problem.description,
+    difficulty: problem.difficulty,
+    category: problem.category,
+    solved: false,
+    acceptance_rate: 0,
+  }));
 
-    return {
-      props: {
-        problems
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching problems from Docker:', error);
-    
-    // 에러 발생 시 빈 배열 반환
-    return {
-      props: {
-        problems: []
-      }
-    };
-  }
+  return {
+    props: { problems },
+  };
 };

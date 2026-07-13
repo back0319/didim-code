@@ -1,0 +1,2270 @@
+{
+  "generated_at": "2026-07-13T05:38:29Z",
+  "source": "cs-database.zip",
+  "problems": [
+    {
+      "id": 2,
+      "title": "Valid Parentheses",
+      "description": "괄호 문자열이 주어졌을 때, 괄호가 올바르게 열리고 닫혔는지 판단하는 문제입니다.\n\n괄호 종류: (), [], {}\n각 괄호는 올바른 순서로 열리고 닫혀야 합니다.\n\n예시:\n입력: s = \"()[]{}\"\n출력: true\n\n입력: s = \"([)]\"\n출력: false",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Stack",
+        "String"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Stack",
+      "input": "5 1 2 3 4 5",
+      "output": "15",
+      "test_cases": [
+        {
+          "input": "()",
+          "output": "true",
+          "explanation": "????? ?????? ?????????????"
+        },
+        {
+          "input": "()[]{}",
+          "output": "true",
+          "explanation": "??? ?????????? ?????? ???????????"
+        },
+        {
+          "input": "(]",
+          "output": "false",
+          "explanation": "??? ????? ??? ?????????? ??? ??????."
+        },
+        {
+          "input": "([)]",
+          "output": "false",
+          "explanation": "?????????? ?????? ??????."
+        },
+        {
+          "input": "{[]}",
+          "output": "true",
+          "explanation": "?????????? ?????? ???????????"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Maximum Subarray",
+      "description": "정수 배열 nums가 주어졌을 때, 연속된 부분 배열의 최대 합을 구하세요.\n\n부분 배열은 배열의 연속된 부분을 의미합니다.\n\n예시:\n입력: nums = [-2,1,-3,4,-1,2,1,-5,4]\n출력: 6\n설명: [4,-1,2,1]의 합이 6으로 최대입니다.",
+      "difficulty": "Medium",
+      "paradigms": [
+        "Dynamic Programming",
+        "Array"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Array",
+      "input": "",
+      "output": "",
+      "test_cases": [
+        {
+          "input": "9\n-2 1 -3 4 -1 2 1 -5 4",
+          "output": "6",
+          "explanation": "[4,-1,2,1]????? 6??? ????????"
+        },
+        {
+          "input": "1\n1",
+          "output": "1",
+          "explanation": "????? ???????? ????? ?????????."
+        },
+        {
+          "input": "4\n5 4 -1 7",
+          "output": "15",
+          "explanation": "??? ???????? 15??????????"
+        },
+        {
+          "input": "5\n-1 -2 -3 -4 -5",
+          "output": "-1",
+          "explanation": "??? ???????? ????????? ?????????."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Fibonacci Number",
+      "description": "피보나치 수는 0과 1로 시작한다. 0번째 피보나치 수는 0이고, 1번째 피보나치 수는 1이다. 그 다음 2번째 부터는 바로 앞 두 피보나치 수의 합이 된다.\n\n이를 식으로 써보면 Fn = Fn-1 + Fn-2 (n ≥ 2)가 된다.\n\nn=17일때 까지 피보나치 수를 써보면 다음과 같다.\n\n0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597\n\nn이 주어졌을 때, n번째 피보나치 수를 구하는 프로그램을 작성하시오.",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Math",
+        "Dynamic Programming",
+        "Recursion"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Math",
+      "input": "5",
+      "output": "5",
+      "test_cases": [
+        {
+          "input": "0",
+          "output": "0",
+          "explanation": "F(0) = 0"
+        },
+        {
+          "input": "1",
+          "output": "1",
+          "explanation": "F(1) = 1"
+        },
+        {
+          "input": "2",
+          "output": "1",
+          "explanation": "F(2) = F(1) + F(0) = 1 + 0 = 1"
+        },
+        {
+          "input": "5",
+          "output": "5",
+          "explanation": "F(5) = 5"
+        },
+        {
+          "input": "10",
+          "output": "55",
+          "explanation": "F(10) = 55"
+        },
+        {
+          "input": "17",
+          "output": "1597",
+          "explanation": "F(17) = 1597"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Longest Palindromic Substring",
+      "description": "문자열 s가 주어졌을 때, 가장 긴 회문 부분 문자열을 찾으세요.\n\n회문이란 앞에서 읽어도 뒤에서 읽어도 같은 문자열입니다.\n\n예시:\n입력: s = \"babad\"\n출력: \"bab\" 또는 \"aba\"\n\n입력: s = \"cbbd\"\n출력: \"bb\"",
+      "difficulty": "Medium",
+      "paradigms": [
+        "String",
+        "Dynamic Programming"
+      ],
+      "expected_complexity": "O(n^2)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "String",
+      "input": "",
+      "output": "",
+      "test_cases": [
+        {
+          "input": "babad",
+          "output": "bab",
+          "explanation": "\"bab\" ??? \"aba\" ??? ????????"
+        },
+        {
+          "input": "cbbd",
+          "output": "bb",
+          "explanation": "??????????? \"bb\"?????"
+        },
+        {
+          "input": "a",
+          "output": "a",
+          "explanation": "??? ?????????????"
+        },
+        {
+          "input": "ac",
+          "output": "a",
+          "explanation": "?????????????????????????"
+        },
+        {
+          "input": "racecar",
+          "output": "racecar",
+          "explanation": "??? ?????? ????????"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Merge Two Sorted Lists",
+      "description": "두 개의 정렬된 연결 리스트의 헤드가 주어졌을 때, 두 리스트를 하나의 정렬된 리스트로 병합하세요.\n\n새 리스트는 첫 번째와 두 번째 리스트의 노드들을 이어서 만들어져야 합니다.\n\n예시:\n입력: list1 = [1,2,4], list2 = [1,3,4]\n출력: [1,1,2,3,4,4]",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Linked List",
+        "Recursion"
+      ],
+      "expected_complexity": "O(m + n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Recursion",
+      "input": "",
+      "output": "",
+      "test_cases": [
+        {
+          "input": "3\n1 2 4\n3\n1 3 4",
+          "output": "[1,1,2,3,4,4]",
+          "explanation": "???????? ?????? [1,1,2,3,4,4]?????"
+        },
+        {
+          "input": "0\n\n0\n",
+          "output": "[]",
+          "explanation": "???????? ??? ???????????????? ????????"
+        },
+        {
+          "input": "0\n\n1\n0",
+          "output": "[0]",
+          "explanation": "???????? ??????????? ?????? ????????"
+        },
+        {
+          "input": "3\n1 3 5\n3\n2 4 6",
+          "output": "[1,2,3,4,5,6]",
+          "explanation": "???????? ??????????? ????????"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Best Time to Buy and Sell Stock",
+      "description": "주식 가격이 담긴 배열이 주어졌을 때, 한 번의 거래로 얻을 수 있는 최대 이익을 구하세요.\n\n주식을 사고 팔아야 하며, 사는 날이 파는 날보다 먼저여야 합니다.\n\n예시:\n입력: prices = [7,1,5,3,6,4]\n출력: 5\n설명: 2일차에 사서(1) 5일차에 팔면(6) 이익은 6-1 = 5입니다.",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Array",
+        "Dynamic Programming"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Array",
+      "input": "",
+      "output": "",
+      "test_cases": [
+        {
+          "input": "6\n7 1 5 3 6 4",
+          "output": "5",
+          "explanation": "2????????(1) 5????????(6) ????? 5?????"
+        },
+        {
+          "input": "5\n7 6 4 3 1",
+          "output": "0",
+          "explanation": "????? ??? ???????????????????????."
+        },
+        {
+          "input": "4\n1 2 3 4",
+          "output": "3",
+          "explanation": "1????????(1) 4????????(4) ????? 3?????"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Binary Tree Inorder Traversal",
+      "description": "이진 트리의 루트가 주어졌을 때, 중위 순회(inorder traversal) 결과를 반환하세요.\n\n중위 순회: 왼쪽 → 루트 → 오른쪽 순서로 방문\n\n예시:\n입력: root = [1,null,2,3]\n출력: [1,3,2]",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Stack",
+        "Tree",
+        "DFS"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Stack",
+      "input": "",
+      "output": "",
+      "test_cases": [
+        {
+          "input": "[1,null,2,3]",
+          "output": "[1,3,2]",
+          "explanation": "??? ???: ???(1) ?????(3) ???????2)"
+        },
+        {
+          "input": "[]",
+          "output": "[]",
+          "explanation": "?????????? ???????????????"
+        },
+        {
+          "input": "[1]",
+          "output": "[1]",
+          "explanation": "????? ????????????? ???????????????"
+        },
+        {
+          "input": "[1,2,3,4,5]",
+          "output": "[4,2,5,1,3]",
+          "explanation": "??? ??? ???????? ????????"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Two Sum",
+      "description": "정수 배열 nums와 정수 target이 주어졌을 때, 배열에서 두 수의 합이 target과 같은 두 수의 인덱스를 반환하세요.\n\n각 입력에 대해 정확히 하나의 해답이 존재한다고 가정할 수 있습니다.\n같은 원소를 두 번 사용할 수 없습니다.",
+      "difficulty": "Easy",
+      "paradigms": [
+        "Hash Table",
+        "Array"
+      ],
+      "expected_complexity": "O(n)",
+      "created_at": "2025-10-06 04:49:54.347577",
+      "category": "Array",
+      "input": "5 1 2 3 4 5",
+      "output": "15",
+      "test_cases": [
+        {
+          "input": "4\n2 7 11 15\n9",
+          "output": "[0, 1]",
+          "explanation": "nums[0] + nums[1] = 2 + 7 = 9?????[0, 1]??????????"
+        },
+        {
+          "input": "3\n3 2 4\n6",
+          "output": "[1, 2]",
+          "explanation": "nums[1] + nums[2] = 2 + 4 = 6?????[1, 2]??????????"
+        },
+        {
+          "input": "2\n3 3\n6",
+          "output": "[0, 1]",
+          "explanation": "nums[0] + nums[1] = 3 + 3 = 6?????[0, 1]??????????"
+        }
+      ]
+    }
+  ],
+  "exemplars": [
+    {
+      "id": 5,
+      "problem_id": 1,
+      "type": "optimal",
+      "code": "def twoSum(nums, target):\n    hash_map = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in hash_map:\n            return [hash_map[complement], i]\n        hash_map[num] = i\n    return []",
+      "complexity": "O(n)",
+      "explanation": "해시맵을 사용한 최적화된 해법입니다. 시간복잡도 O(n), 공간복잡도 O(n)입니다.",
+      "created_at": "2025-10-06 04:49:54.347577"
+    },
+    {
+      "id": 6,
+      "problem_id": 1,
+      "type": "naive",
+      "code": "def twoSum(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []",
+      "complexity": "O(n^2)",
+      "explanation": "이중 반복문을 사용한 단순한 해법입니다. 시간복잡도 O(n)입니다.",
+      "created_at": "2025-10-06 04:49:54.347577"
+    },
+    {
+      "id": 7,
+      "problem_id": 2,
+      "type": "optimal",
+      "code": "def isValid(s):\n    stack = []\n    mapping = {')': '(', '}': '{', ']': '['}\n    \n    for char in s:\n        if char in mapping:\n            top = stack.pop() if stack else '#'\n            if mapping[char] != top:\n                return False\n        else:\n            stack.append(char)\n    \n    return not stack",
+      "complexity": "O(n)",
+      "explanation": "스택을 사용한 최적 해법입니다. 각 괄호를 한 번씩만 확인하므로 O(n)입니다.",
+      "created_at": "2025-11-18 12:51:29.556853"
+    },
+    {
+      "id": 8,
+      "problem_id": 2,
+      "type": "naive",
+      "code": "def isValid(s):\n    while '()' in s or '[]' in s or '{}' in s:\n        s = s.replace('()', '')\n        s = s.replace('[]', '')\n        s = s.replace('{}', '')\n    return s == ''",
+      "complexity": "O(n^2)",
+      "explanation": "문자열 교체를 반복하는 방법입니다. 최악의 경우 O(n) 시간이 걸립니다.",
+      "created_at": "2025-11-18 12:51:29.556853"
+    },
+    {
+      "id": 9,
+      "problem_id": 3,
+      "type": "optimal",
+      "code": "def maxSubArray(nums):\n    max_sum = current_sum = nums[0]\n    \n    for num in nums[1:]:\n        current_sum = max(num, current_sum + num)\n        max_sum = max(max_sum, current_sum)\n    \n    return max_sum",
+      "complexity": "O(n)",
+      "explanation": "Kadane 알고리즘을 사용한 동적 프로그래밍 해법입니다. O(n) 시간, O(1) 공간복잡도입니다.",
+      "created_at": "2025-11-18 12:51:42.609147"
+    },
+    {
+      "id": 10,
+      "problem_id": 3,
+      "type": "naive",
+      "code": "def maxSubArray(nums):\n    max_sum = float('-inf')\n    \n    for i in range(len(nums)):\n        current_sum = 0\n        for j in range(i, len(nums)):\n            current_sum += nums[j]\n            max_sum = max(max_sum, current_sum)\n    \n    return max_sum",
+      "complexity": "O(n^2)",
+      "explanation": "모든 부분 배열을 확인하는 브루트포스 방법입니다. O(n) 시간복잡도입니다.",
+      "created_at": "2025-11-18 12:51:42.609147"
+    },
+    {
+      "id": 11,
+      "problem_id": 4,
+      "type": "optimal",
+      "code": "def maxProfit(prices):\n    min_price = float('inf')\n    max_profit = 0\n    \n    for price in prices:\n        min_price = min(min_price, price)\n        max_profit = max(max_profit, price - min_price)\n    \n    return max_profit",
+      "complexity": "O(n)",
+      "explanation": "한 번의 순회로 최소 가격과 최대 이익을 동시에 추적합니다. O(n) 시간, O(1) 공간복잡도입니다.",
+      "created_at": "2025-11-18 12:51:52.966955"
+    },
+    {
+      "id": 12,
+      "problem_id": 4,
+      "type": "naive",
+      "code": "def maxProfit(prices):\n    max_profit = 0\n    \n    for i in range(len(prices)):\n        for j in range(i + 1, len(prices)):\n            profit = prices[j] - prices[i]\n            max_profit = max(max_profit, profit)\n    \n    return max_profit",
+      "complexity": "O(n^2)",
+      "explanation": "모든 구매-판매 조합을 확인하는 방법입니다. O(n) 시간복잡도입니다.",
+      "created_at": "2025-11-18 12:51:52.966955"
+    },
+    {
+      "id": 13,
+      "problem_id": 6,
+      "type": "optimal",
+      "code": "def fib(n):\n    if n <= 1:\n        return n\n    \n    prev, curr = 0, 1\n    for _ in range(2, n + 1):\n        prev, curr = curr, prev + curr\n    \n    return curr",
+      "complexity": "O(n)",
+      "explanation": "반복문을 사용한 동적 프로그래밍 해법입니다. O(n) 시간, O(1) 공간복잡도입니다.",
+      "created_at": "2025-11-18 12:52:02.019247"
+    },
+    {
+      "id": 14,
+      "problem_id": 6,
+      "type": "naive",
+      "code": "def fib(n):\n    if n <= 1:\n        return n\n    return fib(n - 1) + fib(n - 2)",
+      "complexity": "O(2^n)",
+      "explanation": "재귀를 사용한 단순한 방법입니다. 중복 계산으로 인해 O(2^n) 시간복잡도를 가집니다.",
+      "created_at": "2025-11-18 12:52:02.019247"
+    },
+    {
+      "id": 15,
+      "problem_id": 7,
+      "type": "optimal",
+      "code": "def longestPalindrome(s):\n    def expand(left, right):\n        while left >= 0 and right < len(s) and s[left] == s[right]:\n            left -= 1\n            right += 1\n        return s[left + 1:right]\n    \n    result = ''\n    for i in range(len(s)):\n        # 홀수 길이\n        pal1 = expand(i, i)\n        # 짝수 길이\n        pal2 = expand(i, i + 1)\n        result = max(result, pal1, pal2, key=len)\n    \n    return result",
+      "complexity": "O(n^2)",
+      "explanation": "중심 확장 방법을 사용합니다. 각 위치에서 회문을 확장하여 O(n) 시간복잡도를 가집니다.",
+      "created_at": "2025-11-18 12:52:11.126195"
+    },
+    {
+      "id": 16,
+      "problem_id": 8,
+      "type": "optimal",
+      "code": "def mergeTwoLists(l1, l2):\n    dummy = ListNode(0)\n    current = dummy\n    \n    while l1 and l2:\n        if l1.val < l2.val:\n            current.next = l1\n            l1 = l1.next\n        else:\n            current.next = l2\n            l2 = l2.next\n        current = current.next\n    \n    current.next = l1 or l2\n    return dummy.next",
+      "complexity": "O(m + n)",
+      "explanation": "반복문을 사용한 병합 방법입니다. O(m+n) 시간, O(1) 공간복잡도입니다.",
+      "created_at": "2025-11-18 12:53:21.63549"
+    },
+    {
+      "id": 17,
+      "problem_id": 8,
+      "type": "alternative",
+      "code": "def mergeTwoLists(l1, l2):\n    if not l1:\n        return l2\n    if not l2:\n        return l1\n    \n    if l1.val < l2.val:\n        l1.next = mergeTwoLists(l1.next, l2)\n        return l1\n    else:\n        l2.next = mergeTwoLists(l1, l2.next)\n        return l2",
+      "complexity": "O(m + n)",
+      "explanation": "재귀를 사용한 병합 방법입니다. O(m+n) 시간, O(m+n) 공간복잡도(콜스택)입니다.",
+      "created_at": "2025-11-18 12:53:21.63549"
+    },
+    {
+      "id": 18,
+      "problem_id": 5,
+      "type": "optimal",
+      "code": "def inorderTraversal(root):\n    result = []\n    stack = []\n    current = root\n    \n    while current or stack:\n        while current:\n            stack.append(current)\n            current = current.left\n        \n        current = stack.pop()\n        result.append(current.val)\n        current = current.right\n    \n    return result",
+      "complexity": "O(n)",
+      "explanation": "스택을 사용한 반복적 중위 순회입니다. O(n) 시간, O(n) 공간복잡도입니다.",
+      "created_at": "2025-11-18 12:53:31.373842"
+    },
+    {
+      "id": 19,
+      "problem_id": 5,
+      "type": "alternative",
+      "code": "def inorderTraversal(root):\n    result = []\n    \n    def inorder(node):\n        if not node:\n            return\n        inorder(node.left)\n        result.append(node.val)\n        inorder(node.right)\n    \n    inorder(root)\n    return result",
+      "complexity": "O(n)",
+      "explanation": "재귀를 사용한 중위 순회입니다. O(n) 시간, O(h) 공간복잡도(h는 트리 높이)입니다.",
+      "created_at": "2025-11-18 12:53:31.373842"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": 1,
+      "problem_id": 1,
+      "case_number": 1,
+      "input_data": "5\n1 2 3 4 5",
+      "expected_output": "15",
+      "is_sample": true,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:51.151184"
+    },
+    {
+      "id": 2,
+      "problem_id": 1,
+      "case_number": 2,
+      "input_data": "3\n10 20 30",
+      "expected_output": "60",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:51.151184"
+    },
+    {
+      "id": 3,
+      "problem_id": 1,
+      "case_number": 3,
+      "input_data": "1\n100",
+      "expected_output": "100",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:51.151184"
+    },
+    {
+      "id": 4,
+      "problem_id": 1,
+      "case_number": 4,
+      "input_data": "4\n-1 -2 -3 -4",
+      "expected_output": "-10",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:51.151184"
+    },
+    {
+      "id": 5,
+      "problem_id": 1,
+      "case_number": 5,
+      "input_data": "6\n0 0 0 0 0 0",
+      "expected_output": "0",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:51.151184"
+    },
+    {
+      "id": 6,
+      "problem_id": 6,
+      "case_number": 1,
+      "input_data": "0",
+      "expected_output": "0",
+      "is_sample": true,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 10.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    },
+    {
+      "id": 7,
+      "problem_id": 6,
+      "case_number": 2,
+      "input_data": "1",
+      "expected_output": "1",
+      "is_sample": true,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 10.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    },
+    {
+      "id": 8,
+      "problem_id": 6,
+      "case_number": 3,
+      "input_data": "5",
+      "expected_output": "5",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    },
+    {
+      "id": 9,
+      "problem_id": 6,
+      "case_number": 4,
+      "input_data": "10",
+      "expected_output": "55",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    },
+    {
+      "id": 10,
+      "problem_id": 6,
+      "case_number": 5,
+      "input_data": "15",
+      "expected_output": "610",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    },
+    {
+      "id": 11,
+      "problem_id": 6,
+      "case_number": 6,
+      "input_data": "20",
+      "expected_output": "6765",
+      "is_sample": false,
+      "time_limit": 2.0,
+      "memory_limit": 256,
+      "score": 20.0,
+      "created_at": "2025-11-18 13:12:56.405704"
+    }
+  ],
+  "feedbacks": [
+    {
+      "id": 1,
+      "submission_id": 16,
+      "type": "복잡도",
+      "title": "시간 복잡도 개선 필요",
+      "message": "현재 코드는 배열의 합을 계산하는 O(n) 복잡도를 가지고 있습니다. 그러나 문제에서 요구하는 것은 두 수의 합이 target과 같은 두 수의 인덱스를 찾는 것이므로, 이 부분은 문제의 요구사항을 충족하지 못하고 있습니다. 해시맵을 사용하면 O(n)으로 인덱스를 찾는 알고리즘으로 개선할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:27.735003",
+      "priority": 99
+    },
+    {
+      "id": 2,
+      "submission_id": 16,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 개선 가능",
+      "message": "현재 코드에서 배열을 입력받고, 그 합을 계산하는 과정에서 추가적인 메모리 사용이 필요합니다. 해시맵을 사용하는 경우, 인덱스를 저장하기 위한 추가 메모리가 필요하지만, 배열 자체를 새로운 리스트로 만들 필요는 없어 메모리 사용이 더 효율적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:27.739281",
+      "priority": 99
+    },
+    {
+      "id": 3,
+      "submission_id": 16,
+      "type": "코드 품질",
+      "title": "함수 구조 불완전",
+      "message": "`solution` 함수는 문제의 요구사항을 충족하지 않습니다. 함수 이름이 무엇을 하는지 명확하지 않으며, 매개변수를 받지 않기 때문에 유연성이 떨어집니다. 문제를 해결하는 데 필요한 입력을 매개변수로 받는 구조로 변경하는 것이 좋습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:27.741245",
+      "priority": 99
+    },
+    {
+      "id": 4,
+      "submission_id": 16,
+      "type": "최적화 제안",
+      "title": "해시맵 사용 제안",
+      "message": "문제를 해결하기 위해 해시맵을 사용하여 각 숫자의 인덱스를 저장하고, target에서 현재 숫자를 빼서 필요한 숫자를 찾는 방식으로 접근하면 더 효율적입니다. 예를 들어, 다음과 같은 방식으로 구현할 수 있습니다:\n```python\ndef two_sum(nums, target):\nnum_to_index = {}\nfor index, num in enumerate(nums):\ncomplement = target - num\nif complement in num_to_index:\nreturn [num_to_index[complement], index]\nnum_to_index[num] = index\n```",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:27.743687",
+      "priority": 99
+    },
+    {
+      "id": 5,
+      "submission_id": 16,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법 소개",
+      "message": "위의 제안된 해시맵을 사용하는 방법은 O(n) 시간 복잡도로 문제를 해결할 수 있습니다. 이는 모든 입력에 대해 정확히 하나의 해답이 존재한다는 조건을 활용하여, 각 숫자에 대해 필요한 숫자가 해시맵에 존재하는지를 빠르게 확인할 수 있기 때문입니다. 현재 제출된 코드는 문제의 요구사항을 해결하지 않으므로, 위의 접근 방법을 고려하는 것이 필요합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:27.745568",
+      "priority": 99
+    },
+    {
+      "id": 6,
+      "submission_id": 17,
+      "type": "복잡도",
+      "title": "시간 복잡도 개선 필요",
+      "message": "현재 코드는 배열의 합을 구하는 `sum(arr)` 함수를 사용하고 있습니다. 하지만 문제에서 요구하는 것은 두 수의 합이 `target`과 같은 두 수의 인덱스를 찾는 것입니다. 현재 코드의 시간 복잡도는 O(n)이며, 이는 배열의 크기에 따라 선형적으로 증가합니다. 해시맵을 활용하면 O(n)으로 두 수를 찾는 방법으로 개선할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:29.411243",
+      "priority": 99
+    },
+    {
+      "id": 7,
+      "submission_id": 17,
+      "type": "공간복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서는 배열의 합을 구하기 위해 추가적인 메모리를 사용하지 않지만, 문제의 요구사항에 맞게 해시맵을 사용하게 되면 O(n) 공간이 필요하게 됩니다. 이는 문제를 해결하기 위한 필수적인 메모리 사용이므로 적절하다고 볼 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:29.421593",
+      "priority": 99
+    },
+    {
+      "id": 8,
+      "submission_id": 17,
+      "type": "코드품질",
+      "title": "가독성 및 구조 개선 필요",
+      "message": "현재 함수 `solution()`은 주어진 문제를 해결하지 못하고 있습니다. 함수의 이름을 더 명확하게 변경하고, 함수에 인자를 전달받아 처리하도록 수정하는 것이 좋습니다. 예를 들어, `find_indices(nums, target)`와 같은 이름으로 변경하면 가독성이 향상됩니다. 또한, 입력을 함수 인자로 받는 것이 더 모듈화된 코드 작성에 도움이 됩니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:29.423672",
+      "priority": 99
+    },
+    {
+      "id": 9,
+      "submission_id": 17,
+      "type": "최적화제안",
+      "title": "해시맵 사용",
+      "message": "두 수의 합을 찾기 위해 해시맵을 사용하는 방법을 추천합니다. 배열을 순회하면서 각 숫자의 인덱스를 해시맵에 저장하고, `target - 현재숫자`가 해시맵에 존재하는지를 확인하면 됩니다. 이 방법은 O(n)의 시간 복잡도를 유지하면서도 문제를 해결할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:29.425782",
+      "priority": 99
+    },
+    {
+      "id": 10,
+      "submission_id": 17,
+      "type": "모범답안비교",
+      "title": "더 나은 접근 방법 소개",
+      "message": "아래는 해시맵을 활용한 최적화된 코드 예시입니다:\n```python\ndef find_indices(nums, target):\nnum_map = {}\nfor index, num in enumerate(nums):\ncomplement = target - num\nif complement in num_map:\nreturn [num_map[complement], index]\nnum_map[num] = index\nreturn []\n# 사용 예시\nn = int(input())  # 배열 크기\narr = list(map(int, input().split()))  # 배열 입력\ntarget = int(input())  # 목표 합\nresult = find_indices(arr, target)\nprint(result)\n```\n위의 코드는 주어진 문제를 효과적으로 해결하며, 가독성도 좋고 효율적인 방법입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:29.427534",
+      "priority": 99
+    },
+    {
+      "id": 11,
+      "submission_id": 18,
+      "type": "복잡도",
+      "title": "시간 복잡도 개선 필요",
+      "message": "현재 작성한 코드는 배열의 모든 요소를 합산하는 방식으로, O(n) 시간 복잡도를 가집니다. 그러나 문제의 요구 사항인 \"두 수의 합\"을 구하기 위해서는 두 개의 숫자를 찾아야 하므로, 현재 코드로는 문제를 해결하지 못합니다. 해시맵을 활용한 접근법을 사용하면 O(n)으로 개선할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:38.053955",
+      "priority": 99
+    },
+    {
+      "id": 12,
+      "submission_id": 18,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서는 추가적인 메모리를 사용하지 않고 단순히 배열의 합을 계산하고 있습니다. 그러나 문제를 해결하기 위해서는 인덱스를 저장하기 위한 해시맵을 사용할 경우 O(n)의 공간 복잡도가 필요할 수 있습니다. 이는 문제를 해결하는 데 필요한 최소한의 공간으로, 효율적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:38.063471",
+      "priority": 99
+    },
+    {
+      "id": 13,
+      "submission_id": 18,
+      "type": "코드품질",
+      "title": "코드 구조 개선 필요",
+      "message": "현재 코드에서는 알고리즘 문제를 해결하는 데 필요한 로직이 없습니다. 함수 이름과 구조가 문제의 요구 사항을 반영하고 있지 않습니다. 함수 이름을 `find_indices`와 같이 바꾸고, 입력과 출력에 대한 명확한 설명을 추가하여 가독성을 높일 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:38.070945",
+      "priority": 99
+    },
+    {
+      "id": 14,
+      "submission_id": 18,
+      "type": "최적화 제안",
+      "title": "해시맵을 활용한 접근법 제안",
+      "message": "두 수의 합을 찾기 위해 해시맵을 사용할 수 있습니다. 배열을 순회하면서 각 숫자의 차이(`target - 현재숫자`)가 해시맵에 이미 존재하는지 확인하고, 존재한다면 해당 인덱스와 현재 인덱스를 반환하면 됩니다. 이 방법은 단 한 번의 순회로 문제를 해결할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:38.073274",
+      "priority": 99
+    },
+    {
+      "id": 15,
+      "submission_id": 18,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법 소개",
+      "message": "모범 답안으로는 다음과 같은 해시맵을 활용한 방법이 있습니다:\n```python\ndef two_sum(nums, target):\nnum_to_index = {}\nfor i, num in enumerate(nums):\ndifference = target - num\nif difference in num_to_index:\nreturn [num_to_index[difference], i]\nnum_to_index[num] = i\n```\n이 코드는 O(n) 시간 복잡도와 O(n) 공간 복잡도로 문제를 해결할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:38.074985",
+      "priority": 99
+    },
+    {
+      "id": 16,
+      "submission_id": 19,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 각 숫자에 대해 한 번씩만 순회하고 해시맵에서 상수 시간 내에 조회하기 때문입니다. 이 알고리즘은 최적화된 상태로 보입니다. 추가적인 개선은 필요하지 않습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:46.717809",
+      "priority": 99
+    },
+    {
+      "id": 17,
+      "submission_id": 19,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 해시맵을 사용하여 O(n)의 공간 복잡도를 가지고 있습니다. 이는 배열의 최대 크기와 관계가 있으며, 메모리 사용량이 증가할 수 있습니다. 그러나, 이 문제의 요구사항에 따라 한 쌍의 인덱스만 반환하면 되므로, 다른 방법으로 공간을 줄이기는 어렵습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:46.728847",
+      "priority": 99
+    },
+    {
+      "id": 18,
+      "submission_id": 19,
+      "type": "코드 품질",
+      "title": "가독성 및 변수명",
+      "message": "코드는 전반적으로 잘 작성되었습니다. 다만, `complement`라는 변수명은 의미가 명확하여 좋습니다. `hash_map` 대신 `index_map`과 같은 이름을 사용하면, 이 해시맵이 인덱스를 저장하는 용도임을 더욱 명확히 할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:46.732144",
+      "priority": 99
+    },
+    {
+      "id": 19,
+      "submission_id": 19,
+      "type": "최적화 제안",
+      "title": "자료구조의 최적 활용",
+      "message": "현재 사용하고 있는 해시맵이 매우 적절합니다. 다른 자료구조로는 이 문제를 더 효율적으로 해결할 수 없으므로, 현재 접근 방식이 최적입니다. 단, 이 문제는 특정 상황에서 정렬 후 이진 탐색을 사용할 수도 있지만, 이는 O(n log n)의 시간 복잡도를 가지므로 비효율적입니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:46.734283",
+      "priority": 99
+    },
+    {
+      "id": 20,
+      "submission_id": 19,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법",
+      "message": "현재 제출된 코드는 문제를 해결하는 데 있어 매우 효율적이며, 일반적으로 사용되는 두 수의 합 문제에 대한 모범 답안입니다. 다른 접근 방법으로는 이중 루프를 통한 O(n²) 방법이 있으나, 이는 비효율적이므로 현재 코드가 올바른 접근 방법입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:23:46.736166",
+      "priority": 99
+    },
+    {
+      "id": 21,
+      "submission_id": 20,
+      "type": "복잡도",
+      "title": "시간 복잡도 및 공간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 이는 nums 배열을 한 번 순회하면서 해시맵을 사용하여 두 수의 합을 찾기 때문입니다. 이 알고리즘은 최적의 시간 복잡도로, 더 이상 개선할 여지가 없습니다. 그러나 공간 복잡도는 O(n)으로, 해시맵을 사용하기 때문에 최악의 경우 배열의 모든 요소를 저장해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:27:28.339957",
+      "priority": 99
+    },
+    {
+      "id": 22,
+      "submission_id": 20,
+      "type": "코드 품질",
+      "title": "가독성 및 변수명 개선 필요",
+      "message": "변수명 'hash_map'은 적절하지만, 'num'과 'complement'의 의미를 더욱 명확히 하기 위해 'current_num'과 'needed_num' 같은 이름을 사용하는 것이 좋습니다. 이는 코드의 가독성을 높이고, 변수의 역할을 더 쉽게 이해할 수 있도록 도와줍니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:27:28.350774",
+      "priority": 99
+    },
+    {
+      "id": 23,
+      "submission_id": 20,
+      "type": "최적화 제안",
+      "title": "해시맵 사용의 최선",
+      "message": "현재 알고리즘은 해시맵을 이용하여 최적화된 방법을 사용하고 있습니다. 하지만, 만약 메모리 사용을 최소화하고 싶다면, 정렬 후 투포인터 기법을 사용하는 방법도 고려할 수 있습니다. 이 방법은 O(n log n)의 시간 복잡도를 가지며, 추가 메모리 사용을 줄일 수 있습니다. 그러나 문제의 조건에 따라 해시맵을 사용하는 현재 방법이 더 직관적이고 빠릅니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:27:28.354467",
+      "priority": 99
+    },
+    {
+      "id": 24,
+      "submission_id": 20,
+      "type": "모범 답안 비교",
+      "title": "알고리즘 접근 방식",
+      "message": "현재 제공된 코드는 문제에 대한 적절한 접근 방식을 보여줍니다. 해시맵을 사용하여 두 수의 합을 빠르게 찾는 것은 이 문제를 해결하는 가장 효율적인 방법 중 하나입니다. 다른 접근법인 투 포인터를 사용한 방법은 정렬이 필요한 경우에만 사용할 수 있으며, 주어진 문제의 조건을 고려할 때 해시맵을 사용한 현재 코드가 더 적합합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:27:28.356966",
+      "priority": 99
+    },
+    {
+      "id": 25,
+      "submission_id": 21,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 각 원소를 한 번씩만 순회하고, 해시맵을 통해 상수 시간에 값을 검색하므로 효율적입니다. 이 알고리즘은 이미 최적화된 상태입니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:29:36.438409",
+      "priority": 99
+    },
+    {
+      "id": 26,
+      "submission_id": 21,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드의 공간 복잡도는 O(n)입니다. 해시맵에 모든 원소를 저장하기 때문에 최악의 경우 배열의 크기만큼 메모리를 사용하게 됩니다. 이 문제에서는 공간 복잡도를 추가로 줄이기 어렵습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:29:36.449652",
+      "priority": 99
+    },
+    {
+      "id": 27,
+      "submission_id": 21,
+      "type": "코드 품질",
+      "title": "가독성 좋음",
+      "message": "전반적으로 코드의 가독성이 좋습니다. 함수 이름과 변수 이름이 명확하여 코드의 의도를 쉽게 이해할 수 있습니다. 다만, 'hash_map' 대신 'num_to_index'와 같이 더 구체적인 이름을 사용할 수도 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:29:36.452653",
+      "priority": 99
+    },
+    {
+      "id": 28,
+      "submission_id": 21,
+      "type": "최적화 제안",
+      "title": "더 효율적인 알고리즘 필요 없음",
+      "message": "현재 알고리즘은 이미 최적화된 상태이기 때문에 추가적인 알고리즘 개선은 필요하지 않습니다. 다만, 예외 처리를 추가하여 입력 값이 비어있는 경우에 대한 처리를 추가하는 것이 좋습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:29:36.455625",
+      "priority": 99
+    },
+    {
+      "id": 29,
+      "submission_id": 21,
+      "type": "모범 답안 비교",
+      "title": "모범 답안과 유사",
+      "message": "제출된 코드는 이 문제에 대한 일반적인 접근 방식과 일치하며, 다른 모범 답안과 비교했을 때도 유사한 구조를 가지고 있습니다. 코드가 잘 작동하고 있으며, 문제 해결에 적합한 방법을 사용하고 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:29:36.458471",
+      "priority": 99
+    },
+    {
+      "id": 30,
+      "submission_id": 22,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드는 O(n) 시간 복잡도를 가지고 있습니다. 배열을 한 번 순회하며 해시맵에 요소를 저장하고, 각 요소에 대해 해시맵에서 보완 요소(complement)를 검색합니다. 이 접근 방법은 최적이며 개선할 여지가 없습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:31:45.403847",
+      "priority": 99
+    },
+    {
+      "id": 31,
+      "submission_id": 22,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서 사용하는 해시맵은 O(n) 공간 복잡도를 가집니다. 이는 최악의 경우 배열의 모든 요소를 저장해야 하기 때문입니다. 이 문제에서는 공간 효율성을 높일 수 있는 방법이 적습니다. 그러나, 만약 입력 배열이 매우 크고 메모리 사용이 문제라면, 정렬 후 두 포인터 기법을 사용할 수 있지만, 이 경우 시간 복잡도가 O(n log n)으로 증가하므로 현재 방법이 더 나을 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:31:45.415179",
+      "priority": 99
+    },
+    {
+      "id": 32,
+      "submission_id": 22,
+      "type": "코드 품질",
+      "title": "가독성 및 변수명",
+      "message": "전반적으로 코드의 가독성은 좋습니다. 다만, 변수명 'num'과 'complement'는 명확하지만, 'hash_map'을 단순히 'map'으로 변경할 수도 있습니다. 예를 들어, 'index_map'과 같이 명확한 이름을 사용하면 더욱 이해하기 쉬울 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:31:45.417138",
+      "priority": 99
+    },
+    {
+      "id": 33,
+      "submission_id": 22,
+      "type": "최적화 제안",
+      "title": "불필요한 반환 처리",
+      "message": "현재 코드에서 두 수의 합이 target과 같은 경우가 반드시 존재한다고 가정하고 있으므로, 마지막의 `return []` 문장은 불필요합니다. 이 부분을 제거하여 코드의 간결성을 높일 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:31:45.418667",
+      "priority": 99
+    },
+    {
+      "id": 34,
+      "submission_id": 22,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법",
+      "message": "현재 방법이 최적이긴 하지만, 만약 중복된 수를 허용하거나 배열의 크기가 매우 큰 경우에는 정렬 후 두 포인터를 사용하는 방법도 고려할 수 있습니다. 이 방법은 O(n log n) 시간 복잡도를 가지며, 배열을 정렬한 후 두 개의 포인터를 사용하여 조건을 확인합니다. 하지만 이 경우, 두 수의 인덱스를 원래 배열에서 찾아야 하므로 추가적인 복잡성이 있습니다. 따라서 현재 풀이가 가장 효율적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:31:45.420255",
+      "priority": 99
+    },
+    {
+      "id": 35,
+      "submission_id": 26,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 배열을 한 번 순회하면서 각 요소에 대해 해시맵을 사용하여 조회를 수행하기 때문에 이론적으로 최적입니다. 추가적인 개선은 필요하지 않습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:40:59.442484",
+      "priority": 99
+    },
+    {
+      "id": 36,
+      "submission_id": 26,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서 사용하는 해시맵은 O(n) 공간을 필요로 합니다. 이는 최악의 경우 모든 요소가 해시맵에 저장될 수 있기 때문입니다. 공간 복잡도 개선은 어렵지만, 입력 배열의 크기에 따라 이 정도의 공간 사용은 일반적으로 허용됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:40:59.454508",
+      "priority": 99
+    },
+    {
+      "id": 37,
+      "submission_id": 26,
+      "type": "코드품질",
+      "title": "가독성 개선 필요",
+      "message": "변수명 'num'과 'complement'는 적절하지만, 함수명인 'twoSum'도 의미가 잘 전달됩니다. 그러나 주석을 추가하여 코드의 의도를 명확히 하는 것이 좋습니다. 예를 들어, 해시맵의 사용 목적이나 각 단계에서 수행하는 작업을 설명하는 주석을 추가하면 가독성이 향상될 것입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:40:59.456899",
+      "priority": 99
+    },
+    {
+      "id": 38,
+      "submission_id": 26,
+      "type": "최적화 제안",
+      "title": "더 효율적인 알고리즘 제안",
+      "message": "현재 알고리즘은 이미 효율적이지만, 다른 접근 방식으로는 정렬 후 이분 탐색을 사용하는 방법이 있습니다. 이 방법은 O(n log n)으로 더 느리지만, 해시맵을 사용하는 것보다 메모리 사용이 적을 수 있습니다. 그러나 문제의 특정 조건(정확히 하나의 해답이 존재)에 따라 해시맵을 사용하는 방법이 완벽하므로 현재 접근 방식이 최적입니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:40:59.459267",
+      "priority": 99
+    },
+    {
+      "id": 39,
+      "submission_id": 26,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법 없음",
+      "message": "현재 제출된 코드는 주어진 문제에 대해 매우 효율적이며, 다른 접근 방법이 필요하지 않습니다. 문제 해결을 위한 해시맵 사용은 적절하며, 알고리즘의 성능을 고려할 때 매우 잘 작성되었습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:40:59.461584",
+      "priority": 99
+    },
+    {
+      "id": 40,
+      "submission_id": 27,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 이는 nums 배열을 한 번 순회하면서 각 원소에 대해 해시 맵에서의 조회를 수행하기 때문입니다. 이 알고리즘은 최적화된 상태이며 추가적인 개선은 필요하지 않습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:45:40.314068",
+      "priority": 99
+    },
+    {
+      "id": 41,
+      "submission_id": 27,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드의 공간 복잡도는 O(n)입니다. 해시 맵을 사용하여 각 원소의 인덱스를 저장하기 때문에 최악의 경우 모든 원소를 저장해야 합니다. 이는 문제의 요구사항에 따라 적절할 수 있지만, 메모리 사용을 최소화하려면 다른 접근 방식이 필요할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:45:40.325189",
+      "priority": 99
+    },
+    {
+      "id": 42,
+      "submission_id": 27,
+      "type": "코드 품질",
+      "title": "가독성 및 구조",
+      "message": "코드는 전반적으로 간결하고 이해하기 쉬운 구조입니다. 그러나 변수명 'hash_map' 대신 'index_map'과 같은 더 명확한 이름을 사용할 수 있습니다. 이를 통해 코드의 의도를 더욱 분명히 할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:45:40.327731",
+      "priority": 99
+    },
+    {
+      "id": 43,
+      "submission_id": 27,
+      "type": "최적화 제안",
+      "title": "해시 맵 대신 정렬 사용",
+      "message": "현재 문제의 조건에서는 해시 맵이 가장 효율적인 방법이지만, 만약 추가적인 조건이 없다면 배열을 정렬한 후 투 포인터 기법을 사용하는 방법도 고려해볼 수 있습니다. 그러나 이 경우 시간 복잡도는 O(n log n)으로 증가하므로, 현재 방법이 가장 적합합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:45:40.330202",
+      "priority": 99
+    },
+    {
+      "id": 44,
+      "submission_id": 27,
+      "type": "모범 답안 비교",
+      "title": "접근 방법 소개",
+      "message": "현재의 접근 방법은 매우 효율적이며, 일반적으로 이 문제에서 가장 많이 사용되는 해법입니다. 다른 접근 방법으로는 브루트 포스 방식이 있지만 이는 O(n²)의 시간 복잡도를 가지므로 비효율적입니다. 따라서 제출된 코드가 최적의 해법이라고 할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-18 14:45:40.33207",
+      "priority": 99
+    },
+    {
+      "id": 45,
+      "submission_id": 28,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 하지만 주어진 문제의 요구사항인 \"두 수의 합\"을 찾는 알고리즘은 실제로 O(n²)의 복잡도가 필요할 수 있습니다. 입력 배열을 한 번 탐색하여 해시맵을 사용하면 O(n)으로 개선할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:01:25.728146",
+      "priority": 99
+    },
+    {
+      "id": 46,
+      "submission_id": 28,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서는 배열의 합을 구하기 위해 O(1) 공간만 사용하고 있습니다. 그러나 해시맵을 사용할 경우 O(n) 공간이 필요하게 됩니다. 이는 두 수의 인덱스를 저장하기 위해 필요한 공간입니다. 문제의 요구사항에 따라 이 공간 사용은 합리적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:01:25.732994",
+      "priority": 99
+    },
+    {
+      "id": 47,
+      "submission_id": 28,
+      "type": "코드품질",
+      "title": "변수명 및 함수명 개선 필요",
+      "message": "현재 `solution`이라는 함수명은 매우 일반적입니다. 이 문제에 맞는 좀 더 구체적인 이름(예: `two_sum`)을 사용하는 것이 좋습니다. 또한 입력을 받는 방식이 함수의 목적과 관련이 없으므로, 매개변수로 배열과 타겟 값을 받도록 변경하는 것이 더 좋습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:01:25.734531",
+      "priority": 99
+    },
+    {
+      "id": 48,
+      "submission_id": 28,
+      "type": "최적화 제안",
+      "title": "해시맵을 활용한 접근 방식",
+      "message": "현재 코드는 배열의 합을 구하는 것 외에 문제의 요구사항을 해결하지 않습니다. 두 수의 합을 찾기 위해 해시맵을 활용하는 방법이 있습니다. 각 요소를 해시맵에 저장하면서 타겟에서 현재 요소를 뺀 값을 찾아보는 방식으로 O(n) 시간 복잡도로 해결할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:01:25.735968",
+      "priority": 99
+    },
+    {
+      "id": 49,
+      "submission_id": 28,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법 소개",
+      "message": "문제를 해결하기 위해 다음과 같은 코드 구조를 제안합니다:\n```python\ndef two_sum(nums, target):\nnum_map = {}\nfor index, num in enumerate(nums):\ncomplement = target - num\nif complement in num_map:\nreturn [num_map[complement], index]\nnum_map[num] = index\n# 예시 입력\nnums = list(map(int, input().split()))\ntarget = int(input())\nresult = two_sum(nums, target)\nprint(result)\n```\n이와 같이 작성하면 문제의 요구사항을 충족시키면서도 시간 복잡도를 O(n)으로 최적화할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:01:25.737781",
+      "priority": 99
+    },
+    {
+      "id": 50,
+      "submission_id": 29,
+      "type": "복잡도",
+      "title": "시간 복잡도 개선 필요",
+      "message": "현재 코드는 배열의 합을 구하는 O(n) 시간 복잡도를 가지고 있지만, 문제의 요구사항인 두 수의 합이 target과 같은 두 수의 인덱스를 찾는 기능을 수행하지 못하고 있습니다. 이 문제를 해결하기 위해서는 배열을 한 번만 탐색하여 해시맵을 활용하면 O(n)으로 개선할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:06:20.498735",
+      "priority": 99
+    },
+    {
+      "id": 51,
+      "submission_id": 29,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서는 배열의 합을 구하는 과정에서 추가적인 메모리를 사용하지 않지만, 문제를 해결하기 위해 해시맵을 사용한다면 O(n)의 추가 공간이 필요할 수 있습니다. 이는 일반적으로 수용 가능한 범위입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:06:20.503582",
+      "priority": 99
+    },
+    {
+      "id": 52,
+      "submission_id": 29,
+      "type": "코드 품질",
+      "title": "코드 구조 개선 필요",
+      "message": "현재 제출된 코드는 문제의 요구 사항을 충족하지 않으며, 함수 이름과 구조가 그 목적을 명확히 전달하지 않습니다. 함수 이름을 `find_two_sum`과 같이 명확하게 하고, 입력과 출력을 매개변수로 처리하도록 개선해야 합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:06:20.505378",
+      "priority": 99
+    },
+    {
+      "id": 53,
+      "submission_id": 29,
+      "type": "최적화 제안",
+      "title": "해시맵 사용 제안",
+      "message": "해시맵을 이용해서 각 숫자의 인덱스를 저장하고, 현재 숫자의 목표 값인 `target - 현재 숫자`를 해시맵에서 검색하는 방법을 제안합니다. 이를 통해 O(n)의 시간 복잡도로 문제를 해결할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:06:20.507322",
+      "priority": 99
+    },
+    {
+      "id": 54,
+      "submission_id": 29,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법 소개",
+      "message": "다음과 같은 코드로 문제를 해결할 수 있습니다:\n```python\ndef two_sum(nums, target):\nnum_map = {}\nfor index, num in enumerate(nums):\ncomplement = target - num\nif complement in num_map:\nreturn [num_map[complement], index]\nnum_map[num] = index\n# 예시 사용\nn = int(input())\narr = list(map(int, input().split()))\ntarget = int(input())\nprint(two_sum(arr, target))\n```\n이 코드는 해시맵을 사용하여 두 수의 합을 찾는 효율적인 방법을 보여주며, 문제의 요구 사항을 충족합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 01:06:20.509426",
+      "priority": 99
+    },
+    {
+      "id": 55,
+      "submission_id": 30,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 배열의 합을 계산하는 `sum(arr)` 함수는 배열의 모든 요소를 한 번씩 방문하기 때문입니다. 그러나 문제의 요구사항인 \"두 수의 합\"을 찾는 데는 이 접근이 적합하지 않습니다. 이 문제는 O(n) 시간 복잡도로 해결할 수 있는 해시맵을 활용한 방법이 더 효과적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 05:18:31.013981",
+      "priority": 99
+    },
+    {
+      "id": 56,
+      "submission_id": 30,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드에서는 추가적인 배열이나 데이터 구조를 사용하지 않기 때문에 공간 복잡도는 O(1)입니다. 그러나 문제를 해결하기 위해 해시맵을 사용할 경우 O(n)의 공간 복잡도가 필요하지만, 이는 알고리즘의 효율성을 높이기 위한 적절한 trade-off입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 05:18:31.021257",
+      "priority": 99
+    },
+    {
+      "id": 57,
+      "submission_id": 30,
+      "type": "코드품질",
+      "title": "가독성 및 구조 개선 필요",
+      "message": "현재 코드는 문제의 요구사항을 충족하지 않으며, 입력을 받는 과정과 결과를 출력하는 과정이 혼합되어 있습니다. 함수의 인자를 받도록 수정하고, 명확한 반환 값을 가지도록 하면 가독성이 향상됩니다. 예를 들어, `def solution(nums, target):` 형태로 바꾸고 입력을 함수 외부에서 처리하는 것이 좋습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 05:18:31.025138",
+      "priority": 99
+    },
+    {
+      "id": 58,
+      "submission_id": 30,
+      "type": "최적화 제안",
+      "title": "해시맵 사용",
+      "message": "두 수의 합을 찾기 위해 해시맵을 사용하는 방법을 제안합니다. 각 요소를 순회하면서, `target - num`이 해시맵에 존재하는지 확인하면 O(n) 시간 내에 문제를 해결할 수 있습니다. 이를 통해 코드의 효율성을 크게 개선할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 05:18:31.027651",
+      "priority": 99
+    },
+    {
+      "id": 59,
+      "submission_id": 30,
+      "type": "모범 답안 비교",
+      "title": "더 나은 접근 방법",
+      "message": "아래는 해시맵을 사용한 모범 답안입니다.\n```python\ndef two_sum(nums, target):\nnum_map = {}\nfor index, num in enumerate(nums):\ncomplement = target - num\nif complement in num_map:\nreturn [num_map[complement], index]\nnum_map[num] = index\n# 사용 예\nn = int(input())\narr = list(map(int, input().split()))\ntarget = int(input())\nprint(two_sum(arr, target))\n```\n이 코드는 문제의 요구사항을 충족하며, 효율적이고 가독성이 뛰어납니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-19 05:18:31.029767",
+      "priority": 99
+    },
+    {
+      "id": 60,
+      "submission_id": 31,
+      "type": "복잡도",
+      "title": "시간 복잡도 분석",
+      "message": "현재 코드의 시간 복잡도는 O(n)입니다. 이는 n에 비례하여 선형적으로 증가하는 성능을 보여줍니다. 이 알고리즘은 효율적이며, 피보나치 수를 구하는 데 적합한 접근 방법입니다. 그러나 재귀적 방법이나 다른 접근법을 사용할 경우 시간 복잡도가 O(2^n)으로 증가할 수 있으므로, 현재의 동적 프로그래밍 접근이 적절합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 05:12:26.205176",
+      "priority": 99
+    },
+    {
+      "id": 61,
+      "submission_id": 31,
+      "type": "공간 복잡도",
+      "title": "메모리 사용 효율성",
+      "message": "현재 코드의 공간 복잡도는 O(n)입니다. n개의 피보나치 수를 담기 위해 리스트를 사용하고 있습니다. 하지만 피보나치 수를 계산하는 데 있어 이전 두 값만 필요하기 때문에, 공간 복잡도를 O(1)로 줄일 수 있습니다. 단순히 두 개의 변수로 값을 저장하고 업데이트하는 방식으로 구현할 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 05:12:26.212167",
+      "priority": 99
+    },
+    {
+      "id": 62,
+      "submission_id": 31,
+      "type": "코드품질",
+      "title": "가독성 및 구조 개선",
+      "message": "코드의 가독성은 좋은 편이지만, 리스트를 사용하는 대신 두 개의 변수를 사용하는 방식으로 더 간결하게 만들 수 있습니다. 예를 들어, dp 리스트를 사용하지 않고 두 개의 변수 `a`와 `b`를 이용해 이전 두 피보나치 수를 저장하는 방식으로 구현할 수 있습니다. 또한, 함수의 주석을 추가해 함수의 목적과 동작을 설명하면 가독성이 더욱 향상될 것입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 05:12:26.2144",
+      "priority": 99
+    },
+    {
+      "id": 63,
+      "submission_id": 31,
+      "type": "최적화 제안",
+      "title": "더 효율적인 알고리즘",
+      "message": "피보나치 수를 계산하는 더 효율적인 방법은 행렬 제곱을 사용하는 것입니다. 이 방법은 O(log n)의 시간 복잡도로 피보나치 수를 계산할 수 있습니다. 이를 통해 더 큰 n값에 대해서도 빠른 계산이 가능해집니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 05:12:26.216121",
+      "priority": 99
+    },
+    {
+      "id": 64,
+      "submission_id": 31,
+      "type": "모범 답안 비교",
+      "title": "대체 접근 방법 소개",
+      "message": "현재 제출된 코드는 동적 프로그래밍을 사용하여 피보나치 수를 계산하고 있습니다. 대체 접근 방법으로는 재귀적 방법과 메모이제이션을 사용할 수 있습니다. 이 방법은 코드가 더 간결할 수 있지만, 메모리 사용량이 늘어날 수 있으므로 n이 큰 경우에는 비효율적일 수 있습니다. 따라서 동적 프로그래밍 방식이 가장 적절하다고 판단됩니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 05:12:26.218076",
+      "priority": 99
+    },
+    {
+      "id": 65,
+      "submission_id": 32,
+      "type": "분석 결과",
+      "title": "코드 분석 결과",
+      "message": "### 1️⃣ [문법 오류] 잘못된 조건문\n`elif n = 1:` 부분에서 `=` 대신 `==`를 사용해야 합니다. `=`는 대입 연산자이므로, 조건 비교를 위해서는 `==`를 사용해야 올바른 문법이 됩니다.\n\n### 2️⃣ [접근 실수] 재귀적 접근의 비효율성\n현재 알고리즘은 재귀적 접근을 사용하고 있습니다. 이는 피보나치 수를 구할 때 매우 비효율적입니다. 동일한 계산을 여러 번 수행하게 되어 시간 복잡도가 지수적으로 증가합니다. 예를 들어, `fibonacci(5)`를 계산하기 위해 `fibonacci(4)`와 `fibonacci(3)`를 호출하고, 이들 각각이 다시 `fibonacci(2)`를 호출하는 식으로 중복 계산이 발생합니다.\n\n### 3️⃣ [논리 오류] 엣지 케이스 처리 부족\n현재 코드에서는 n이 0 또는 1인 경우만 제대로 처리하고 있지만, n이 음수일 경우에 대한 처리가 없습니다. 문제에서 n이 음수일 경우 어떻게 처리할지에 대한 명시가 없다면, 이를 확인하고 적절한 예외 처리를 추가하는 것이 좋습니다.\n\n### 4️⃣ [개선 제안] 반복문을 통한 최적화\n재귀 대신 반복문을 사용하여 피보나치 수를 계산하는 방법을 제안합니다. 이 방법은 시간 복잡도를 O(n)으로 줄일 수 있습니다. 아래는 개선된 코드 예시입니다:\n\n```python\ndef fibonacci(n):\n    if n < 0:\n        raise ValueError(\"n은 0 이상의 정수여야 합니다.\")\n    elif n == 0:\n        return 0\n    elif n == 1:\n        return 1\n    \n    a, b = 0, 1\n    for _ in range(2, n + 1):\n        a, b = b, a + b\n    return b\n\nn = int(input())\nprint(fibonacci(n))\n```\n\n이 코드는 반복문을 사용하여 피보나치 수를 효율적으로 계산하며, 음수 입력에 대한 예외 처리를 추가하였습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:11:32.328423",
+      "priority": 99
+    },
+    {
+      "id": 66,
+      "submission_id": 33,
+      "type": "시간 복잡도",
+      "title": "O(2^n 지수 시간",
+      "message": "현재 코드의 시간 복잡도는 O(2^n)입니다. 재귀 호출 방식으로 피보나치 수를 계산하기 때문에, 동일한 값을 여러 번 계산하게 되어 지수적으로 증가하는 시간 복잡도를 가집니다. n이 증가할수록 호출되는 함수의 수가 기하급수적으로 늘어납니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:12:06.666087",
+      "priority": 99
+    },
+    {
+      "id": 67,
+      "submission_id": 33,
+      "type": "공간 복잡도",
+      "title": "O(n) 스택 공간",
+      "message": "현재 코드의 공간 복잡도는 O(n)입니다. 재귀 호출로 인해 최대 n번까지 함수 호출이 스택에 쌓이게 됩니다. 이는 함수 호출이 겹치면서 발생하는 추가적인 메모리 사용입니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:12:06.672052",
+      "priority": 99
+    },
+    {
+      "id": 68,
+      "submission_id": 33,
+      "type": "코드 품질",
+      "title": "가독성은 좋지만 최적화 필요",
+      "message": "코드는 가독성이 좋고, 기본적인 피보나치 수 계산을 잘 구현하고 있습니다. 그러나 재귀 호출로 인해 비효율적이므로, 최적화를 고려하는 것이 좋습니다. 또한, 함수와 변수의 이름이 적절하여 이해하기 쉽습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:12:06.673442",
+      "priority": 99
+    },
+    {
+      "id": 69,
+      "submission_id": 33,
+      "type": "최적화 제안",
+      "title": "동적 프로그래밍 사용 제안",
+      "message": "재귀 대신 동적 프로그래밍을 통해 피보나치 수를 계산하는 것을 추천합니다. 메모이제이션 기법을 사용하여 이미 계산한 값을 저장하면 시간 복잡도를 O(n)으로 줄일 수 있습니다. 예를 들어, 다음과 같은 코드로 구현할 수 있습니다:\n```python\ndef fibonacci(n):\nfib = [0] * (n + 1)\nfib[0], fib[1] = 0, 1\nfor i in range(2, n + 1):\nfib[i] = fib[i - 1] + fib[i - 2]\nreturn fib[n]\n```",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:12:06.674739",
+      "priority": 99
+    },
+    {
+      "id": 70,
+      "submission_id": 33,
+      "type": "모범 답안 비교",
+      "title": "반복문 vs 재귀",
+      "message": "함수형 프로그래밍을 선호한다면 재귀를 사용할 수 있지만, 성능 측면에서는 반복문이 더 효율적입니다. 반복문은 스택 오버플로우의 위험이 없고, 메모리 사용량도 적습니다. 동적 프로그래밍 방식은 기억할 값을 배열에 저장하여 효율적으로 피보나치 수를 구할 수 있는 장점이 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:12:06.675914",
+      "priority": 99
+    },
+    {
+      "id": 71,
+      "submission_id": 34,
+      "type": "시간 복잡도",
+      "title": "O(2^n) 지수 시간",
+      "message": "현재 코드의 재귀적 접근 방식은 n이 증가함에 따라 호출되는 함수의 수가 기하급수적으로 증가합니다. 이는 피보나치 수를 구하기 위해 동일한 값을 여러 번 계산하게 되어, O(2^n)의 시간 복잡도를 초래합니다. 예를 들어, n=5일 때는 총 15회 호출되지만, n=10일 때는 89회, n=20일 때는 10946회 호출됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:40:56.312809",
+      "priority": 99
+    },
+    {
+      "id": 72,
+      "submission_id": 34,
+      "type": "공간 복잡도",
+      "title": "O(n) 공간 사용",
+      "message": "재귀 호출이 진행될 때마다 호출 스택이 쌓이므로, 최악의 경우 최대 n개의 호출이 동시에 진행될 수 있습니다. 따라서 공간 복잡도는 O(n)입니다. 또한, 현재 코드에서는 추가적인 자료구조를 사용하지 않으므로 메모리 사용량의 최적성은 괜찮지만, 스택 오버플로우의 위험이 있으므로 비재귀적인 접근이 더 안전할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:40:56.317129",
+      "priority": 99
+    },
+    {
+      "id": 73,
+      "submission_id": 34,
+      "type": "코드 품질",
+      "title": "가독성 개선 가능",
+      "message": "코드 구조는 간단하고 잘 작동합니다. 그러나 `fibonacci` 함수의 이름이 명확하긴 하지만, 재귀적 접근임을 강조하기 위해 `recursive_fibonacci`와 같은 이름을 사용하는 것도 좋습니다. 또한, 입력값에 대한 예외 처리가 없으므로 음수와 같은 비정상적인 입력에 대한 처리가 필요합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:40:56.319166",
+      "priority": 99
+    },
+    {
+      "id": 74,
+      "submission_id": 34,
+      "type": "최적화 제안",
+      "title": "동적 프로그래밍을 통한 최적화",
+      "message": "현재 코드보다 더 효율적인 방법으로 동적 프로그래밍을 사용할 수 있습니다. 메모이제이션을 통해 이미 계산된 피보나치 수를 저장하고 재사용하는 방법을 고려해 보세요. 또는 단순한 반복문을 통해 O(n) 시간 복잡도와 O(1) 공간 복잡도로 피보나치 수를 구하는 방법도 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:40:56.321519",
+      "priority": 99
+    },
+    {
+      "id": 75,
+      "submission_id": 34,
+      "type": "모범 답안 비교",
+      "title": "동적 프로그래밍과 반복문 접근",
+      "message": "1. **동적 프로그래밍**: 하위 문제의 결과를 저장하여 중복 계산을 피합니다. 시간 복잡도 O(n), 공간 복잡도 O(n)입니다.\n2. **반복문**: 두 개의 변수를 사용하여 이전 두 피보나치 수를 저장하며 계산하므로 시간 복잡도 O(n), 공간 복잡도 O(1)입니다. 이 방법은 더 효율적이며 코드도 간결해집니다.\n예시 코드:\n```python\ndef fibonacci(n):\nif n == 0:\nreturn 0\nelif n == 1:\nreturn 1\na, b = 0, 1\nfor _ in range(2, n + 1):\na, b = b, a + b\nreturn b\n```\n이 코드는 비재귀적이며 더 좋은 성능을 제공합니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:40:56.323781",
+      "priority": 99
+    },
+    {
+      "id": 76,
+      "submission_id": 35,
+      "type": "시간 복잡도",
+      "title": "O(2^n) 지수 시간",
+      "message": "현재 코드의 시간 복잡도는 O(2^n)입니다. 이는 재귀적으로 호출되는 함수가 각 호출에서 두 개의 하위 호출을 생성하기 때문입니다. 이로 인해 호출 트리가 매우 빠르게 커지게 됩니다. 따라서, n이 증가함에 따라 실행 시간이 기하급수적으로 증가하게 됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:41:56.514736",
+      "priority": 99
+    },
+    {
+      "id": 77,
+      "submission_id": 35,
+      "type": "공간 복잡도",
+      "title": "O(n) 스택 공간",
+      "message": "재귀 호출을 사용하는 경우, 최대 n 깊이의 호출 스택이 생성되므로 공간 복잡도는 O(n)입니다. 하지만, 이 과정에서 별도의 자료구조를 사용하지 않기 때문에 메모리 사용량은 비교적 적습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:41:56.528617",
+      "priority": 99
+    },
+    {
+      "id": 78,
+      "submission_id": 35,
+      "type": "코드 품질",
+      "title": "명확한 구조",
+      "message": "코드는 간결하고 기본적인 피보나치 수를 계산하는 로직을 잘 표현하고 있습니다. 그러나 가독성을 높이기 위해 함수와 변수에 대한 주석을 추가하는 것이 좋습니다. 예를 들어, 각 base case에 대한 설명을 추가하면 코드를 이해하는 데 도움이 될 것입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:41:56.530993",
+      "priority": 99
+    },
+    {
+      "id": 79,
+      "submission_id": 35,
+      "type": "최적화 제안",
+      "title": "동적 프로그래밍 제안",
+      "message": "현재 코드는 지수 시간 복잡도를 가지므로, 동적 프로그래밍이나 메모이제이션 기법을 사용하는 것이 좋습니다. 예를 들어, 아래와 같이 메모이제이션을 사용하면 시간 복잡도를 O(n)으로 개선할 수 있습니다.\n```python\ndef fibonacci(n, memo={}):\nif n in memo:\nreturn memo[n]\nif n == 0:\nreturn 0\nelif n == 1:\nreturn 1\nmemo[n] = fibonacci(n-1, memo) + fibonacci(n-2, memo)\nreturn memo[n]\n```",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:41:56.532897",
+      "priority": 99
+    },
+    {
+      "id": 80,
+      "submission_id": 35,
+      "type": "모범 답안 비교",
+      "title": "반복문을 통한 접근",
+      "message": "반복문을 사용하여 피보나치 수를 계산하는 방법도 있습니다. 이 방법은 O(n) 시간 복잡도를 가지며 스택 오버플로우의 위험이 없습니다. 아래는 그 예시입니다.\n```python\ndef fibonacci(n):\nif n == 0:\nreturn 0\nelif n == 1:\nreturn 1\na, b = 0, 1\nfor _ in range(2, n+1):\na, b = b, a + b\nreturn b\n```\n이 방법의 장점은 메모리 사용량이 O(1)로 매우 적고, 실행 시간이 훨씬 빠르다는 것입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:41:56.535289",
+      "priority": 99
+    },
+    {
+      "id": 81,
+      "submission_id": 36,
+      "type": "최적화 제안",
+      "title": "재귀 대신 반복문",
+      "message": "재귀 호출로 인해 시간복잡도가 O(2^n)입니다. 반복문으로 변경하면 O(n)으로 개...",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:43:08.282069",
+      "priority": 99
+    },
+    {
+      "id": 82,
+      "submission_id": 37,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용",
+      "message": "재귀 호출 대신 메모이제이션으로 중복 계산 줄여 성능 개선 가능.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:44:29.829734",
+      "priority": 99
+    },
+    {
+      "id": 83,
+      "submission_id": 38,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용하기",
+      "message": "재귀 방식은 중복 계산이 많아 비효율적입니다. 메모이제이션을 통해 이미 계산한 값을 저장하면 시간 복잡도를 O(n)으로 줄일 수 있습니다. 리스트를 사용해 이전 값을 저장하면 성능이 크게 향상됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:48:30.361969",
+      "priority": 99
+    },
+    {
+      "id": 84,
+      "submission_id": 39,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용하기",
+      "message": "재귀 방식으로 구현된 현재 코드는 중복 계산이 많아 비효율적입니다. 메모이제이션 기법을 사용하여 이미 계산된 값을 저장하면 시간 복잡도를 O(n)으로 줄일 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:50:59.572223",
+      "priority": 99
+    },
+    {
+      "id": 85,
+      "submission_id": 40,
+      "type": "최적화 제안",
+      "title": "재귀 대신 동적 프로그래밍",
+      "message": "현재 코드는 재귀를 사용해 피보나치 수를 계산하므로 시간이 지수적으로 증가합니다. 동적 프로그래밍을 사용하면 O(n) 시간 복잡도로 개선할 수 있으며, 메모이제이션 기법을 통해 계산된 값을 저장하면 중복 계산을 피할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:54:19.243964",
+      "priority": 99
+    },
+    {
+      "id": 86,
+      "submission_id": 41,
+      "type": "문법 오류",
+      "title": "코드 끝 괄호 누락",
+      "message": "`print(fibonacci(n`에서 괄호가 닫히지 않아 컴파일 에러가 발생하고 있습니다. `print(fibonacci(n))`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 09:55:22.875662",
+      "priority": 99
+    },
+    {
+      "id": 87,
+      "submission_id": 42,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용하기",
+      "message": "현재 코드의 피보나치 계산은 중복 호출로 인해 시간 복잡도가 O(2^n)입니다. 메모이제이션 기법을 사용하면 이미 계산한 값을 저장하여 중복 계산을 피할 수 있어 O(n)으로 개선할 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-24 10:00:29.88413",
+      "priority": 99
+    },
+    {
+      "id": 88,
+      "submission_id": 43,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "O(n) 시간, O(1) 공간으로 피보나치 수를 효율적으로 계산합니다. 주어진 코드의 구조는 간결하고 가독성이 뛰어나며, 불필요한 메모리 사용을 최소화하여 성능이 우수합니다. 추가적인 최적화가 필요하지 않습니다. 잘 작성된 코드입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:01:07.191869",
+      "priority": 99
+    },
+    {
+      "id": 89,
+      "submission_id": 44,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용하기",
+      "message": "현재 코드의 재귀적 접근 방식은 중복 계산이 많아 비효율적입니다. 메모이제이션 기법을 사용하면 이미 계산한 값을 저장하여 중복 호출을 줄이고, 시간 복잡도를 O(n)으로 개선할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:21:51.65211",
+      "priority": 99
+    },
+    {
+      "id": 90,
+      "submission_id": 45,
+      "type": "우수한 풀이",
+      "title": "효율적인 피보나치 계산",
+      "message": "행렬 제곱을 이용한 접근 방식으로 O(log n) 시간 복잡도를 달성했습니다. 이 방법은 특히 큰 n에 대해 매우 효율적이며, 메모리 사용량도 적습니다. 코드의 가독성도 우수하여 이해하기 쉬운 점이 인상적입니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:22:28.341019",
+      "priority": 99
+    },
+    {
+      "id": 91,
+      "submission_id": 46,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "메모이제이션을 사용하여 O(n) 시간 복잡도로 피보나치 수를 계산하는 유효한 방법입니다. 공간 복잡도도 O(n)으로 적절하며, 다른 알고리즘과 비교했을 때 효율적입니다. 추가적인 개선이 필요하지 않습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:22:46.927651",
+      "priority": 99
+    },
+    {
+      "id": 92,
+      "submission_id": 47,
+      "type": "논리 오류",
+      "title": "피보나치 수 계산 오류",
+      "message": "재귀 호출 시, `fibonacci(n, memo) + fibonacci(n - 2, memo)` 대신 `fibonacci(n - 1, memo) + fibonacci(n - 2, memo)`로 수정해야 올바른 피보나치 수를 계산할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:25:25.431306",
+      "priority": 99
+    },
+    {
+      "id": 93,
+      "submission_id": 48,
+      "type": "문법 오류",
+      "title": "괄호 불일치 문제",
+      "message": "`def fibonacci(n:`에서 괄호가 닫히지 않았습니다. 올바른 문법은 `def fibonacci(n):`입니다. 또한, `input()`의 괄호도 닫히지 않았습니다. `n = int(input())`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:29:07.492543",
+      "priority": 99
+    },
+    {
+      "id": 94,
+      "submission_id": 49,
+      "type": "문법 오류",
+      "title": "for 문 구문 오류",
+      "message": "`for` 문에서 콜론(`:`)이 빠져 있습니다. `for _ in range(2, n + 1):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:29:52.018474",
+      "priority": 99
+    },
+    {
+      "id": 95,
+      "submission_id": 50,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "피보나치 수를 O(n) 시간복잡도와 O(1) 공간복잡도로 효율적으로 계산했습니다. 재귀 호출을 사용하지 않아 스택 오버플로우 문제를 피할 수 있으며, 코드가 간결하고 이해하기 쉽습니다. 매우 훌륭한 풀이입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:31:01.287137",
+      "priority": 99
+    },
+    {
+      "id": 96,
+      "submission_id": 51,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "O(n) 시간, O(1) 공간으로 피보나치 수를 효율적으로 계산합니다. 재귀 호출을 사용하지 않아 스택 오버플로우 문제를 피할 수 있으며, 코드가 간결하고 이해하기 쉽습니다. 매우 좋은 풀이입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:33:45.248192",
+      "priority": 99
+    },
+    {
+      "id": 97,
+      "submission_id": 52,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "O(n) 시간, O(1) 공간으로 효율적입니다. 피보나치 수를 계산하는 데 필요한 메모리를 최소화하면서도 성능을 유지하고 있습니다. 코드 또한 간결하고 가독성이 좋습니다. 매우 잘 작성된 코드입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:34:34.300989",
+      "priority": 99
+    },
+    {
+      "id": 98,
+      "submission_id": 53,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "이 코드는 O(n) 시간 복잡도와 O(1) 공간 복잡도로 피보나치 수를 효과적으로 계산합니다. 반복문을 통해 메모리를 절약하면서도 성능을 유지하고 있어, 다른 알고리즘을 사용할 필요가 없습니다. 매우 잘 작성되었습니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:37:49.025124",
+      "priority": 99
+    },
+    {
+      "id": 99,
+      "submission_id": 54,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "코드가 O(n) 시간 복잡도와 O(1) 공간 복잡도로 효율적으로 작성되었습니다. 피보나치 수를 계산하는 데 있어 최적의 방법 중 하나로, 추가적인 개선이 필요하지 않습니다. 잘 작성된 코드입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:40:15.957278",
+      "priority": 99
+    },
+    {
+      "id": 100,
+      "submission_id": 55,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "주어진 코드에서는 O(n) 시간 복잡도와 O(1) 공간 복잡도로 피보나치 수를 효율적으로 계산하고 있습니다. 코드가 간결하고 가독성이 높아 유지보수에도 용이합니다. 더 이상의 개선이 필요하지 않습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:42:59.402851",
+      "priority": 99
+    },
+    {
+      "id": 101,
+      "submission_id": 56,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "O(n) 시간, O(1) 공간으로 피보나치 수를 효율적으로 계산했습니다. 반복문을 사용하여 이전 두 수를 저장하며 계산하기 때문에 메모리 사용이 최소화되었습니다. 추가적인 개선은 필요하지 않습니다. 잘 작성된 코드입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:43:07.525398",
+      "priority": 99
+    },
+    {
+      "id": 102,
+      "submission_id": 57,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "O(n) 시간, O(1) 공간으로 효율적입니다. 피보나치 수를 구하는 데 필요한 메모리를 최소화하여 성능이 뛰어납니다. 코드도 간결하고 가독성이 좋습니다. 추가적인 개선이 필요하지 않습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 12:44:08.255227",
+      "priority": 99
+    },
+    {
+      "id": 103,
+      "submission_id": 58,
+      "type": "개선 제안",
+      "title": "비효율적인 재귀 호출",
+      "message": "현재 코드의 재귀 방식은 시간 복잡도가 O(2^n)으로 매우 비효율적입니다. 메모이제이션이나 반복문을 사용하여 성능을 개선할 수 있습니다. 예를 들어, 반복문을 사용한 다음과 같은 방법으로 구현하면 O(n)으로 피보나치 수를 구할 수 있습니다. ```python def fibonacci(n): if n == 0: return 0 elif n == 1:...",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 16:43:25.316931",
+      "priority": 99
+    },
+    {
+      "id": 104,
+      "submission_id": 59,
+      "type": "접근 실수",
+      "title": "피보나치 수 계산 오류",
+      "message": "제출된 코드는 피보나치 수를 계산하는 것이 아닌 삼중 반복문을 통한 출력 로직입니다. n번째 피보나치 수를 구하기 위해서는 재귀나 반복문을 사용하여 피보나치 수를 정의하는 식을 구현해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 16:47:24.858188",
+      "priority": 99
+    },
+    {
+      "id": 105,
+      "submission_id": 60,
+      "type": "접근 실수",
+      "title": "피보나치 계산 실패",
+      "message": "현재 코드는 피보나치 수열을 계산하는 것이 아닌 단순히 0부터 2까지의 수를 출력하고 있습니다. n번째 피보나치 수를 계산하기 위해서는 재귀적이거나 반복적인 방법으로 피보나치 수를 구해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 16:47:37.444603",
+      "priority": 99
+    },
+    {
+      "id": 106,
+      "submission_id": 61,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "함수 정의 시 괄호 뒤에 콜론(:)이 필요합니다. `def fibonacci(n)`을 `def fibonacci(n):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 18:05:03.042479",
+      "priority": 99
+    },
+    {
+      "id": 107,
+      "submission_id": 62,
+      "type": "논리 오류",
+      "title": "잘못된 재귀 호출",
+      "message": "재귀 호출에서 피보나치 수를 구할 때 덧셈이 아닌 곱셈을 사용하고 있습니다. `fibonacci(n-1) + fibonacci(n-2)`로 수정해야 올바른 피보나치 수를 계산할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 18:05:29.347181",
+      "priority": 99
+    },
+    {
+      "id": 108,
+      "submission_id": 63,
+      "type": "논리 오류",
+      "title": "피보나치 계산 오류",
+      "message": "현재 코드에서는 0부터 n-1까지의 합을 계산하고 있습니다. 피보나치 수열을 구하려면 이전 두 수를 더하는 로직이 필요합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 18:05:54.372516",
+      "priority": 99
+    },
+    {
+      "id": 109,
+      "submission_id": 64,
+      "type": "최적화 제안",
+      "title": "재귀를 반복문으로 변경",
+      "message": "현재 코드의 재귀 방식은 시간 복잡도가 O(2^n)으로 비효율적입니다. 반복문을 사용하여 O(n)으로 개선할 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-25 18:06:59.020608",
+      "priority": 99
+    },
+    {
+      "id": 110,
+      "submission_id": 65,
+      "type": "문법 오류",
+      "title": "if 문에서 오류 발생",
+      "message": "`if n <= 1` 뒤에 콜론(:)이 누락되었습니다. 이를 추가해야 코드가 정상적으로 실행됩니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:04:55.1625",
+      "priority": 99
+    },
+    {
+      "id": 111,
+      "submission_id": 66,
+      "type": "논리 오류",
+      "title": "잘못된 피보나치 계산",
+      "message": "현재 코드에서는 피보나치 수를 계산하는 대신 0부터 n-1까지의 합을 구하고 있습니다. 피보나치 수는 직전 두 수의 합으로 정의되므로, 이 점을 반영한 올바른 로직을 구현해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:05:51.540195",
+      "priority": 99
+    },
+    {
+      "id": 112,
+      "submission_id": 67,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용",
+      "message": "재귀 호출 방식은 중복된 계산이 많아 비효율적입니다. 메모이제이션 기법을 사용하여 이미 계산한 피보나치 값을 저장하면 시간 복잡도를 O(n)으로 개선할 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:06:58.481297",
+      "priority": 99
+    },
+    {
+      "id": 113,
+      "submission_id": 68,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 사용",
+      "message": "현재 코드의 재귀적 접근은 중복 계산을 초래합니다. n이 커질수록 불필요한 호출이 많아져 실행 시간이 급격히 증가합니다. 메모이제이션 기법이나 반복문을 사용하여 효율성을 높일 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:20:48.989382",
+      "priority": 99
+    },
+    {
+      "id": 114,
+      "submission_id": 69,
+      "type": "문법 오류",
+      "title": "조건문 구문 오류",
+      "message": "`if n <= 1` 다음에 콜론(:)이 누락되었습니다. 올바른 형태는 `if n <= 1:`입니다. 이 오류로 인해 코드가 실행되지 않습니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:22:16.128143",
+      "priority": 99
+    },
+    {
+      "id": 115,
+      "submission_id": 70,
+      "type": "논리 오류",
+      "title": "잘못된 피보나치 계산",
+      "message": "현재 구현된 피보나치 함수는 단순히 0부터 n까지의 합을 계산하고 있습니다. 피보나치 수열을 계산하려면 이전 두 항의 합을 구해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:22:32.537717",
+      "priority": 99
+    },
+    {
+      "id": 116,
+      "submission_id": 71,
+      "type": "문법 오류",
+      "title": "조건문 오류 발견",
+      "message": "`if n <= 1` 다음에 콜론(:)이 누락되어 있습니다. 조건문은 반드시 콜론으로 끝나야 하므로, `if n <= 1:`으로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:30:40.522386",
+      "priority": 99
+    },
+    {
+      "id": 117,
+      "submission_id": 72,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 호출",
+      "message": "재귀 호출 방식은 중복 계산이 많아 시간 복잡도가 O(2^n)입니다. 동적 프로그래밍이나 반복문을 사용하여 효율성을 높일 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:31:52.622782",
+      "priority": 99
+    },
+    {
+      "id": 118,
+      "submission_id": 73,
+      "type": "문법 오류",
+      "title": "괄호 누락 문제",
+      "message": "`print(result`에서 닫는 괄호가 누락되어 있습니다. `print(result)`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:32:54.464047",
+      "priority": 99
+    },
+    {
+      "id": 119,
+      "submission_id": 74,
+      "type": "논리 오류",
+      "title": "피보나치 수 계산 오류",
+      "message": "현재 코드에서는 피보나치 수를 계산하는 것이 아니라 단순히 0부터 n-1까지의 합을 구하고 있습니다. 피보나치 수열은 이전 두 수의 합으로 정의되므로, 올바른 로직으로 수정해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:34:30.506355",
+      "priority": 99
+    },
+    {
+      "id": 120,
+      "submission_id": 75,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 사용",
+      "message": "현재 사용된 재귀 방식은 중복 계산이 많아 지수 시간 복잡도를 가지므로, n이 커질수록 매우 비효율적입니다. 메모이제이션이나 반복문을 사용해 성능을 개선할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:35:56.769696",
+      "priority": 99
+    },
+    {
+      "id": 121,
+      "submission_id": 76,
+      "type": "접근 실수",
+      "title": "잘못된 알고리즘",
+      "message": "제출된 코드는 피보나치 수를 계산하는 것이 아니라, 두 개의 중첩 반복문을 사용하여 특정 조건을 만족하는 값을 출력하고 있습니다. 주어진 문제에 맞게 피보나치 수를 구하는 알고리즘으로 수정해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:45:30.174748",
+      "priority": 99
+    },
+    {
+      "id": 122,
+      "submission_id": 77,
+      "type": "접근 실수",
+      "title": "잘못된 문제 이해",
+      "message": "제출하신 코드는 피보나치 수를 계산하는 것이 아니라 두 수의 합을 구하는 반복문입니다. 피보나치 수열의 정의를 따르도록 알고리즘을 수정해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 01:45:50.4932",
+      "priority": 99
+    },
+    {
+      "id": 123,
+      "submission_id": 78,
+      "type": "접근 실수",
+      "title": "잘못된 알고리즘",
+      "message": "현재 제출된 코드는 피보나치 수열을 계산하는 함수로, 문제에서 요구하는 두 수의 합을 찾는 알고리즘과는 전혀 관련이 없습니다. 문제를 해결하기 위해서는 배열을 탐색하면서 두 수의 합이 타겟과 일치하는 인덱스를 찾는 방법을 사용해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:02:38.290191",
+      "priority": 99
+    },
+    {
+      "id": 124,
+      "submission_id": 79,
+      "type": "접근 실수",
+      "title": "잘못된 알고리즘",
+      "message": "제출된 코드는 피보나치 수열을 계산하는 함수입니다. 문제에서 요구하는 것은 두 수의 합을 찾는 것이므로, 해당 알고리즘으로는 문제를 해결할 수 없습니다. 배열을 탐색하여 두 수의 합을 찾는 적절한 접근 방식을 사용해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:03:00.429917",
+      "priority": 99
+    },
+    {
+      "id": 125,
+      "submission_id": 80,
+      "type": "최적화 제안",
+      "title": "비효율적인 재귀 호출",
+      "message": "현재 알고리즘은 지수 시간 복잡도 O(2^n)을 가지며, 동일한 계산을 여러 번 수행합니다. 동적 프로그래밍 또는 메모이제이션을 사용하여 중복 계산을 피하고 시간 복잡도를 O(n)으로 줄이는 것이 좋습니다. 예를 들어, 배열을 사용해 이전 결과를 저장하면서 계산하면 효율성이 크게 향상됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:03:19.11329",
+      "priority": 99
+    },
+    {
+      "id": 126,
+      "submission_id": 81,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 호출",
+      "message": "현재 구현은 피보나치 수를 재귀적으로 계산하는데, 같은 값을 여러 번 계산하게 되어 시간 복잡도가 O(2^n)입니다. 이로 인해 n이 커질수록 성능이 급격히 저하됩니다. 동적 프로그래밍이나 반복문을 사용하여 개선할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:05:17.309718",
+      "priority": 99
+    },
+    {
+      "id": 127,
+      "submission_id": 82,
+      "type": "논리 오류",
+      "title": "잘못된 피보나치 계산",
+      "message": "현재 코드는 피보나치 수를 계산하는 것이 아니라 단순히 0부터 n-1까지의 합을 구하고 있습니다. 피보나치 수열을 생성하기 위해서는 이전 두 수의 합을 사용하는 로직으로 수정해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:07:00.208944",
+      "priority": 99
+    },
+    {
+      "id": 128,
+      "submission_id": 83,
+      "type": "최적화 제안",
+      "title": "재귀 대신 동적 계획법",
+      "message": "현재 코드는 재귀 방식으로 피보나치 수를 계산하는데, 이로 인해 중복된 계산이 발생하여 비효율적입니다. 동적 계획법이나 반복문을 사용하면 O(n) 시간 복잡도로 최적화할 수 있습니다. 예를 들어, 두 변수를 사용해 마지막 두 수를 저장하며 반복적으로 계산하는 방법을 고려해보세요.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:22:42.088552",
+      "priority": 99
+    },
+    {
+      "id": 129,
+      "submission_id": 84,
+      "type": "최적화 제안",
+      "title": "메모이제이션 활용하기",
+      "message": "현재 구현은 재귀적으로 모든 피보나치 수를 계산하므로 시간 복잡도가 O(2^n)입니다. 메모이제이션 기법을 사용하여 이전 계산 결과를 저장하면 시간 복잡도를 O(n)으로 줄일 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:22:51.589224",
+      "priority": 99
+    },
+    {
+      "id": 130,
+      "submission_id": 85,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "함수 정의 시 콜론(:)이 누락되었습니다. `def fibonacci(n):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:43:34.068199",
+      "priority": 99
+    },
+    {
+      "id": 131,
+      "submission_id": 86,
+      "type": "논리 오류",
+      "title": "피보나치 계산 오류",
+      "message": "현재 코드에서는 피보나치 수를 계산하는 대신 단순히 0부터 n-1까지의 합을 구하고 있습니다. 피보나치 수는 이전 두 수의 합으로 정의되므로, 이를 반영한 계산이 필요합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:43:56.929165",
+      "priority": 99
+    },
+    {
+      "id": 132,
+      "submission_id": 87,
+      "type": "최적화 제안",
+      "title": "재귀 대신 동적 프로그래밍",
+      "message": "현재 코드는 재귀 방식으로 피보나치 수를 계산하고 있어 중복 계산이 많아 비효율적입니다. 동적 프로그래밍 기법을 사용하면 O(n) 시간 복잡도로 계산할 수 있습니다. 예를 들어, 배열을 사용하여 이미 계산한 값을 저장하면 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 02:45:08.51211",
+      "priority": 99
+    },
+    {
+      "id": 133,
+      "submission_id": 88,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "함수 정의에서 괄호 뒤에 콜론(:)이 빠져 있습니다. `def fibonacci(n):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 03:04:02.983769",
+      "priority": 99
+    },
+    {
+      "id": 134,
+      "submission_id": 89,
+      "type": "논리 오류",
+      "title": "피보나치 계산 오류",
+      "message": "현재 코드에서는 피보나치 수를 구하는 대신 단순히 0부터 n-1까지의 합을 계산하고 있습니다. 피보나치 수열을 올바르게 계산하려면 이전 두 수의 합을 사용해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 03:04:40.204525",
+      "priority": 99
+    },
+    {
+      "id": 135,
+      "submission_id": 90,
+      "type": "최적화 제안",
+      "title": "메모이제이션 사용",
+      "message": "현재 재귀 방식은 중복 계산이 많아 비효율적입니다. 메모이제이션 기법을 사용하여 이미 계산된 피보나치 수를 저장하면 O(n) 시간 복잡도로 개선할 수 있습니다. 이를 통해 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 03:04:59.58873",
+      "priority": 99
+    },
+    {
+      "id": 136,
+      "submission_id": 91,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 호출",
+      "message": "현재의 재귀적 접근 방식은 많은 중복 계산을 발생시켜 O(2^n)의 시간 복잡도를 가집니다. 메모이제이션 기법을 사용하여 이미 계산한 값을 저장하면 효율성을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 04:54:53.340289",
+      "priority": 99
+    },
+    {
+      "id": 137,
+      "submission_id": 92,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "함수 정의에서 콜론(:)이 누락되었습니다. `def fibonacci(n)`을 `def fibonacci(n):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 04:55:18.285568",
+      "priority": 99
+    },
+    {
+      "id": 138,
+      "submission_id": 93,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "`def fibonacci(n)`에서 괄호 뒤에 콜론(`:`)이 누락되었습니다. 올바른 문법으로 수정해 주세요: `def fibonacci(n):`",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 04:55:20.718026",
+      "priority": 99
+    },
+    {
+      "id": 139,
+      "submission_id": 94,
+      "type": "문법 오류",
+      "title": "함수 정의 오류",
+      "message": "함수 정의 시 괄호 뒤에 콜론(:)이 빠져 있습니다. `def fibonacci(n):`로 수정해야 합니다.",
+      "severity": "error",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 04:59:09.432688",
+      "priority": 99
+    },
+    {
+      "id": 140,
+      "submission_id": 95,
+      "type": "논리 오류",
+      "title": "잘못된 피보나치 계산",
+      "message": "현재 코드에서는 피보나치 수를 계산하지 않고 단순히 0부터 n-1까지의 합을 구하고 있습니다. 피보나치 수는 이전 두 수의 합으로 정의되므로, 각 단계에서 두 수를 저장하고 계산하는 로직이 필요합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 04:59:39.813737",
+      "priority": 99
+    },
+    {
+      "id": 141,
+      "submission_id": 96,
+      "type": "최적화 제안",
+      "title": "메모이제이션으로 개선",
+      "message": "재귀 호출 방식은 중복 계산이 많아 비효율적입니다. 메모이제이션 기법을 사용하여 이미 계산된 피보나치 수를 저장하면 성능을 크게 향상시킬 수 있습니다. 이를 통해 시간 복잡도를 O(n)으로 줄일 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-11-26 05:00:02.844674",
+      "priority": 99
+    },
+    {
+      "id": 142,
+      "submission_id": 97,
+      "type": "접근 실수",
+      "title": "비효율적인 재귀 사용",
+      "message": "현재 사용된 재귀 방식은 중복 계산이 많아 비효율적입니다. 메모이제이션 기법을 활용하여 계산 결과를 저장하면 성능을 크게 개선할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-03 01:12:50.696202",
+      "priority": 99
+    },
+    {
+      "id": 143,
+      "submission_id": 98,
+      "type": "논리 오류",
+      "title": "재귀 호출 오류",
+      "message": "피보나치 수를 계산할 때, `fibonacci(n)` 대신 `fibonacci(n - 1)`을 호출해야 합니다. 현재 코드는 무한 재귀를 발생시켜 Stack Overflow가 발생할 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 05:55:35.920321",
+      "priority": 99
+    },
+    {
+      "id": 144,
+      "submission_id": 99,
+      "type": "논리 오류",
+      "title": "잘못된 피보나치 계산",
+      "message": "피보나치 수열을 구하는 과정에서, n번째 수를 출력할 때 `abs(a-b)`를 사용하고 있습니다. 이는 피보나치 수열의 마지막 값이 아닌 두 개의 값의 차이를 출력하게 됩니다. `a`는 n+1번째 피보나치 수를 가리키므로, n번째 피보나치 수는 `a`가 아닌 `b`입니다. 따라서 `print(b)`로 수정해야 올바른 결과를 얻을 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 05:56:58.560072",
+      "priority": 99
+    },
+    {
+      "id": 145,
+      "submission_id": 100,
+      "type": "논리 오류",
+      "title": "피보나치 수 출력 오류",
+      "message": "마지막 출력에서 `abs(a-b)`를 사용하고 있는데, 이는 피보나치 수열의 n번째 값이 아니라 a와 b의 차이를 출력하게 됩니다. n번째 피보나치 수는 a가 아니라 b에 저장되어야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 05:57:03.98719",
+      "priority": 99
+    },
+    {
+      "id": 146,
+      "submission_id": 101,
+      "type": "논리 오류",
+      "title": "초기값 설정 문제",
+      "message": "피보나치 수를 계산할 때, `a`와 `b`의 초기값은 0과 1로 설정하는 것이 맞습니다. 현재 코드에서는 반복문이 시작될 때 `a`는 0, `b`는 1로 올바르게 설정되어 있지만, 만약 `n`이 0인 경우에도 결과가 0을 반환하도록 구성되어 있습니다. 이 부분은 별도의 조건문으로 처리되어야 하며, 반복문 내에서 `b`를 반환하는 로직이 `n`이 0일 ...",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 05:58:16.683048",
+      "priority": 99
+    },
+    {
+      "id": 147,
+      "submission_id": 102,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "코드는 피보나치 수를 O(n) 시간, O(1) 공간 복잡도로 효율적으로 계산합니다. 반복문을 사용하여 이전 두 값을 기억하면서 계산하기 때문에 메모리 사용이 최소화되었습니다. 이 방식은 매우 효과적이며, 더 나은 알고리즘은 없습니다. 잘 작성된 코드입니다!",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:00:16.630267",
+      "priority": 99
+    },
+    {
+      "id": 148,
+      "submission_id": 103,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "현재 풀이에서 시간 복잡도는 O(n)이며, 공간 복잡도는 O(1)로 매우 효율적입니다. 피보나치 수를 계산하는 다른 방법으로는 메모이제이션을 이용한 방법이나 행렬 제곱을 활용한 방법도 있습니다. 이러한 방식들도 고려해보세요.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:03:07.723909",
+      "priority": 99
+    },
+    {
+      "id": 149,
+      "submission_id": 104,
+      "type": "우수한 풀이",
+      "title": "최적 알고리즘",
+      "message": "제출한 코드는 O(n) 시간 복잡도와 O(1) 공간 복잡도로 효율적으로 피보나치 수를 계산합니다. 이 알고리즘은 메모리를 절약하며, 재귀적 방법에 비해 성능이 뛰어납니다. 다른 접근법으로는 메모이제이션을 사용한 재귀 함수도 고려해볼 수 있습니다.",
+      "severity": "info",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:04:41.182046",
+      "priority": 99
+    },
+    {
+      "id": 150,
+      "submission_id": 105,
+      "type": "복잡도 개선",
+      "title": "재귀 대신 반복 사용",
+      "message": "현재 코드의 시간 복잡도는 O(2^n)으로 매우 비효율적입니다. 반복문을 사용해 O(n)으로 개선할 수 있습니다. 메모이제이션 기법을 활용하면 중복 계산을 줄여 성능을 크게 향상시킬 수 있습니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:06:21.880466",
+      "priority": 99
+    },
+    {
+      "id": 151,
+      "submission_id": 106,
+      "type": "논리 오류",
+      "title": "잘못된 재귀 호출",
+      "message": "`fibonacci(n)`에서 `fibonacci(n) + fibonacci(n - 2)`으로 호출하고 있습니다. 이는 무한 재귀를 유발하여 프로그램이 종료되지 않습니다. 올바르게는 `fibonacci(n - 1) + fibonacci(n - 2)`로 수정해야 합니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:07:09.16611",
+      "priority": 99
+    },
+    {
+      "id": 152,
+      "submission_id": 107,
+      "type": "논리 오류",
+      "title": "재귀 호출 오류",
+      "message": "`fibonacci(n-1)`을 두 번 호출하고 있습니다. 두 번째 호출은 `fibonacci(n - 1)`이 아니라 `fibonacci(n - 2)`여야 합니다. 이로 인해 피보나치 수 계산이 잘못됩니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:07:48.280623",
+      "priority": 99
+    },
+    {
+      "id": 153,
+      "submission_id": 108,
+      "type": "접근 실수",
+      "title": "잘못된 알고리즘",
+      "message": "피보나치 수열을 구하는 문제에서 단순히 1부터 n까지의 합을 구하고 있습니다. 피보나치 수는 이전 두 수의 합으로 정의되므로, 올바른 접근 방법은 재귀 호출, 반복문 또는 동적 프로그래밍을 사용하는 것입니다.",
+      "severity": "warning",
+      "code_suggestion": null,
+      "created_at": "2025-12-12 06:29:22.686192",
+      "priority": 99
+    }
+  ]
+}
