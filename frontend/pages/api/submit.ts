@@ -130,13 +130,29 @@ async function createHint(
   }
 
   const failure = result.test_results.find((test) => test.verdict !== 'AC');
+  const csvTests = getJudgeTestCases(problem.id);
+  const hintTests = csvTests.length > 0
+    ? csvTests.map((test) => ({
+        case_id: test.case_number,
+        input: test.input_data,
+        expected_output: test.expected_output,
+      }))
+    : problem.test_cases.map((test, index) => ({
+        case_id: index + 1,
+        input: test.input,
+        expected_output: test.output,
+      }));
+  const failedTest = failure
+    ? hintTests.find((test) => test.case_id === failure.case_id)
+    : undefined;
   const prompt = [
-    `문제 제목: ${problem.title}`,
-    `문제 설명:\n${problem.description}`,
+    `문제 ID: ${problem.id}`,
     `기대 복잡도: ${problem.expected_complexity}`,
-    `패러다임: ${problem.paradigms.join(', ')}`,
     `실제 채점 결과: ${result.verdict}`,
-    failure ? `실패 정보: ${failure.message}` : '모든 테스트 통과',
+    failure ? `실패 정보: ${failure.message}` : '모든 CSV 테스트 통과',
+    failedTest ? `실패 입력: ${failedTest.input}` : '',
+    failedTest ? `기대 출력: ${failedTest.expected_output}` : '',
+    failure ? `실제 출력: ${failure.actual_output}` : '',
     result.error ? `실행 오류: ${result.error}` : '',
     `사용자 Python 코드:\n${code}`,
   ].filter(Boolean).join('\n\n');
@@ -153,7 +169,9 @@ async function createHint(
         instructions: [
           '당신은 알고리즘 학습자가 스스로 다음 시도를 하도록 돕는 Python 튜터입니다.',
           '실제 채점 결과를 근거로 가장 먼저 확인할 핵심 힌트 딱 한 가지만 한국어로 작성하세요.',
+          '문제 설명 대신 제공된 CSV 판정과 실패 입력·출력을 사실의 기준으로 사용하세요.',
           '정답 코드, 의사 코드, 완성된 풀이, 테스트의 기대 출력은 절대 제공하지 마세요.',
+          '힌트에 테스트의 구체적인 입력값이나 출력값을 그대로 노출하지 마세요.',
           '오답이면 구문, 실행, 시간 초과, 논리 중 판정과 직접 관련된 원인부터 짚으세요.',
           '정답이면 복잡도나 코드 품질에서 스스로 점검할 한 가지 질문만 제시하세요.',
           'title은 30자, message는 200자 이내로 작성하세요.',
@@ -168,7 +186,7 @@ async function createHint(
               type: 'object',
               additionalProperties: false,
               properties: {
-                type: { type: 'string' },
+                type: { type: 'string', enum: ['핵심 힌트'] },
                 title: { type: 'string' },
                 message: { type: 'string' },
                 severity: { type: 'string', enum: ['info', 'warning', 'error'] },
