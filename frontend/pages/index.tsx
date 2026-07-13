@@ -19,12 +19,12 @@ const Home: React.FC = () => {
             <div className="max-w-7xl mx-auto text-center">
               <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-8 leading-tight">
                 <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  알고리즘 문제 풀이와 AI 코드 피드백
+                  실행 과정을 확인하고, 힌트로 다시 풀어보세요
                 </span>
               </h1>
               
               <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-                Monaco Editor에서 Python 코드를 작성하고 실행 결과와 AI 피드백을 확인할 수 있습니다.
+                DidimCode는 Python 코드의 실행 흐름을 단계별로 보여주고, 정답 대신 핵심 힌트를 제공해 스스로 풀이를 개선하도록 돕습니다.
               </p>
               
               <div className="flex justify-center">
@@ -49,32 +49,32 @@ const Home: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                주요 기능
+                DidimCode의 특징
               </h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-blue-100">
                 <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">⌨️</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Monaco 코드 편집기</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">직접 풀어보는 학습</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  브라우저에서 Python 코드를 작성하고 문제별 테스트 케이스를 확인할 수 있습니다.
+                  Monaco Editor에서 Python 코드를 직접 작성하고 실행하며 풀이를 확인합니다.
                 </p>
               </div>
               
               <div className="group bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-3xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-purple-100">
                 <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">▶️</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">격리된 코드 실행</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">단계별 실행 시각화</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Vercel Sandbox의 격리된 Python 환경에서 코드를 실행하고 결과를 비교합니다.
+                  반복, 분기, 함수 호출과 변수 변화를 실제 실행 순서대로 확인합니다.
                 </p>
               </div>
               
               <div className="group bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-3xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-green-100">
                 <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">🤖</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">AI 코드 피드백</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">한 가지 핵심 힌트</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  제출한 코드의 복잡도와 코드 품질, 개선할 부분을 AI 피드백으로 확인합니다.
+                  정답 코드 대신 가장 먼저 확인할 힌트 하나를 받아 스스로 풀이를 개선합니다.
                 </p>
               </div>
             </div>

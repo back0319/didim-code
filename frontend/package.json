@@ -1,9 +1,9 @@
 {
-  "name": "ai-algorithm-tutor-frontend",
+  "name": "didim-code-frontend",
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",

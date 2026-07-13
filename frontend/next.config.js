@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    '/api/visualize': ['./sandbox/visualize_runner.py'],
+    '/api/submit': ['./sandbox/judge_runner.py'],
+  },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Monaco Editor를 위한 설정
     config.module.rules.push({

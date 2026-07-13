@@ -15,6 +15,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <Head>
+        <title>DidimCode</title>
+        <meta name="description" content="Python 코드의 실행 흐름을 확인하고 핵심 힌트로 풀이를 개선하는 알고리즘 학습 프로젝트" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -27,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="text-2xl font-bold text-indigo-600">
-                AlgoTutor
+                DidimCode
               </Link>
             </div>
 
@@ -56,7 +58,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
 
             <a
-              href="https://github.com/back0319/CS"
+              href="https://github.com/back0319/DidimCode"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
