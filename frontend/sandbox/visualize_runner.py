@@ -1,6 +1,7 @@
 import ast
 import bdb
 import json
+import operator
 
 
 MAX_STEPS = 1000
@@ -52,39 +53,78 @@ def visible_variables(values):
     }
 
 
+def visible_global_variables(values):
+    return {
+        name: encode_value(value)
+        for name, value in values.items()
+        if name not in IGNORED_NAMES
+        and not name.startswith("__")
+        and not callable(value)
+    }
+
+
 class BlockAnalyzer:
     def __init__(self, code):
+        self.code_lines = code.split("\n")
         self.blocks = []
         try:
             self._visit(ast.parse(code), 0)
         except SyntaxError:
             pass
 
+    @staticmethod
+    def _expression(node):
+        try:
+            return ast.unparse(node)
+        except Exception:
+            return ""
+
     def _visit(self, node, depth):
-        block_types = {
-            ast.For: ("for_loop", "for loop"),
-            ast.While: ("while_loop", "while loop"),
-            ast.If: ("if_block", "if block"),
-            ast.With: ("with_block", "with block"),
-            ast.Try: ("try_block", "try block"),
-            ast.FunctionDef: ("function", f"function {getattr(node, 'name', '')}"),
-            ast.AsyncFunctionDef: ("function", f"function {getattr(node, 'name', '')}"),
-        }
-        for node_type, (block_type, fallback_name) in block_types.items():
-            if isinstance(node, node_type):
-                name = fallback_name
-                if isinstance(node, ast.For) and isinstance(node.target, ast.Name):
-                    name = f"for {node.target.id}"
-                self.blocks.append({
-                    "type": block_type,
-                    "name": name,
-                    "start_line": node.lineno,
-                    "end_line": getattr(node, "end_lineno", node.lineno),
-                    "depth": depth,
-                    "parent_blocks": [],
-                })
-                depth += 1
-                break
+        block = None
+        if isinstance(node, ast.For):
+            block = {
+                "type": "for_loop",
+                "label": "for",
+                "name": "반복문",
+                "expression": f"{self._expression(node.target)} in {self._expression(node.iter)}",
+            }
+        elif isinstance(node, ast.While):
+            block = {
+                "type": "while_loop",
+                "label": "while",
+                "name": "반복문",
+                "expression": self._expression(node.test),
+            }
+        elif isinstance(node, ast.If):
+            source = self.code_lines[node.lineno - 1].lstrip() if node.lineno <= len(self.code_lines) else ""
+            label = "elif" if source.startswith("elif ") else "if"
+            block = {
+                "type": "if_block",
+                "label": label,
+                "name": "조건문",
+                "expression": self._expression(node.test),
+            }
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            block = {
+                "type": "function",
+                "label": "def",
+                "name": getattr(node, "name", "function"),
+                "expression": getattr(node, "name", "function"),
+            }
+        elif isinstance(node, ast.With):
+            block = {"type": "with_block", "label": "with", "name": "with", "expression": ""}
+        elif isinstance(node, ast.Try):
+            block = {"type": "try_block", "label": "try", "name": "try", "expression": ""}
+
+        if block is not None:
+            block.update({
+                "start_line": node.lineno,
+                "end_line": getattr(node, "end_lineno", node.lineno),
+                "depth": depth,
+                "parent_blocks": [],
+            })
+            self.blocks.append(block)
+            depth += 1
         for child in ast.iter_child_nodes(node):
             self._visit(child, depth)
 
@@ -98,6 +138,111 @@ class BlockAnalyzer:
         for index, block in enumerate(matches):
             block["parent_blocks"] = matches[:index]
         return matches
+
+    def starting_at(self, line_number):
+        matches = [block for block in self.blocks if block["start_line"] == line_number]
+        return max(matches, key=lambda block: block["depth"], default=None)
+
+
+SAFE_BINARY_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+}
+SAFE_COMPARE_OPERATORS = {
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+    ast.In: lambda left, right: left in right,
+    ast.NotIn: lambda left, right: left not in right,
+    ast.Is: operator.is_,
+    ast.IsNot: operator.is_not,
+}
+
+
+def is_safe_evaluation_value(value, depth=0):
+    if depth > 3:
+        return False
+    if type(value) in (type(None), bool, int, float, str):
+        return True
+    if type(value) in (list, tuple, set):
+        return all(is_safe_evaluation_value(item, depth + 1) for item in value)
+    if type(value) is dict:
+        return all(
+            is_safe_evaluation_value(key, depth + 1)
+            and is_safe_evaluation_value(item, depth + 1)
+            for key, item in value.items()
+        )
+    return False
+
+
+def safe_expression_value(node, values):
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Name):
+        if node.id not in values:
+            raise ValueError(node.id)
+        value = values[node.id]
+        if not is_safe_evaluation_value(value):
+            raise ValueError("unsupported value")
+        return value
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        items = [safe_expression_value(item, values) for item in node.elts]
+        if isinstance(node, ast.Tuple):
+            return tuple(items)
+        if isinstance(node, ast.Set):
+            return set(items)
+        return items
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        return not safe_expression_value(node.operand, values)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        return -safe_expression_value(node.operand, values)
+    if isinstance(node, ast.BinOp) and type(node.op) in SAFE_BINARY_OPERATORS:
+        return SAFE_BINARY_OPERATORS[type(node.op)](
+            safe_expression_value(node.left, values),
+            safe_expression_value(node.right, values),
+        )
+    if isinstance(node, ast.BoolOp):
+        items = [bool(safe_expression_value(value, values)) for value in node.values]
+        return all(items) if isinstance(node.op, ast.And) else any(items)
+    if isinstance(node, ast.Compare):
+        left = safe_expression_value(node.left, values)
+        for operation, comparator in zip(node.ops, node.comparators):
+            right = safe_expression_value(comparator, values)
+            compare = SAFE_COMPARE_OPERATORS.get(type(operation))
+            if compare is None or not compare(left, right):
+                return False
+            left = right
+        return True
+    if isinstance(node, ast.Subscript):
+        container = safe_expression_value(node.value, values)
+        if type(container) not in (list, tuple, dict, str):
+            raise ValueError("unsupported subscript")
+        return container[safe_expression_value(node.slice, values)]
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "len"
+        and len(node.args) == 1
+    ):
+        return len(safe_expression_value(node.args[0], values))
+    raise ValueError("unsupported expression")
+
+
+def evaluate_condition(expression, values):
+    if not expression:
+        return None
+    try:
+        parsed = ast.parse(expression, mode="eval")
+        return bool(safe_expression_value(parsed.body, values))
+    except Exception:
+        return None
 
 
 class TraceLimitExceeded(Exception):
@@ -115,6 +260,7 @@ class FrameTracer(bdb.Bdb):
         self.call_tree = []
         self.frame_call_ids = {}
         self.next_call_id = 1
+        self.loop_counts = {}
 
     @staticmethod
     def _is_user_frame(frame):
@@ -156,7 +302,7 @@ class FrameTracer(bdb.Bdb):
         local_values = visible_variables(frame.f_locals)
         if event == "return" and return_value is not None:
             local_values["__return__"] = encode_value(return_value)
-        global_values = visible_variables(frame.f_globals) if frame.f_code.co_name == "<module>" else {}
+        global_values = visible_global_variables(frame.f_globals)
         variables = {**global_values, **local_values}
 
         function_name = frame.f_code.co_name
@@ -191,6 +337,21 @@ class FrameTracer(bdb.Bdb):
             operation = "assignment"
             description = "변수에 값 할당"
 
+        call_id = self.frame_call_ids.get(id(frame))
+        control_block = self.blocks.starting_at(line_number) if event == "line" else None
+        condition_result = None
+        loop_iteration = None
+        if control_block and control_block["type"] in ("if_block", "while_loop"):
+            condition_result = evaluate_condition(
+                control_block.get("expression", ""),
+                {**frame.f_globals, **frame.f_locals},
+            )
+        if control_block and control_block["type"] == "while_loop":
+            loop_key = (call_id, line_number)
+            if condition_result is True:
+                self.loop_counts[loop_key] = self.loop_counts.get(loop_key, 0) + 1
+            loop_iteration = self.loop_counts.get(loop_key, 0)
+
         self.steps.append({
             "line": line_number,
             "operation": operation,
@@ -198,10 +359,37 @@ class FrameTracer(bdb.Bdb):
             "output": "".join(self.output).rstrip("\n"),
             "description": description,
             "func_name": function_name,
+            "call_id": call_id,
             "stack_frames": self._stack_frames(frame),
             "globals_vars": global_values,
             "current_blocks": self.blocks.current(line_number),
+            "condition_result": condition_result,
+            "loop_iteration": loop_iteration,
+            "loop_finished": control_block is not None
+            and control_block["type"] == "while_loop"
+            and condition_result is False,
         })
+
+    def finalize_steps(self):
+        for_counts = {}
+        for index, step in enumerate(self.steps):
+            if step["operation"] != "loop":
+                continue
+            block = self.blocks.starting_at(step["line"])
+            if not block or block["type"] != "for_loop":
+                continue
+
+            next_step = self.steps[index + 1] if index + 1 < len(self.steps) else None
+            enters_body = bool(
+                next_step
+                and next_step.get("call_id") == step.get("call_id")
+                and block["start_line"] < next_step["line"] <= block["end_line"]
+            )
+            loop_key = (step.get("call_id"), step["line"])
+            if enters_body:
+                for_counts[loop_key] = for_counts.get(loop_key, 0) + 1
+            step["loop_iteration"] = for_counts.get(loop_key, 0)
+            step["loop_finished"] = not enters_body
 
     def _stack_frames(self, frame):
         frames = []
@@ -234,6 +422,9 @@ class FrameTracer(bdb.Bdb):
 
     def user_call(self, frame, argument_list):
         if self._is_user_frame(frame):
+            if frame.f_code.co_name == "<module>":
+                self._append(frame, "call")
+                return
             call_id = self.next_call_id
             self.next_call_id += 1
             self.frame_call_ids[id(frame)] = call_id
@@ -370,6 +561,8 @@ def main():
             "globals_vars": {},
             "current_blocks": [],
         })
+
+    tracer.finalize_steps()
 
     print(json.dumps({
         "steps": tracer.steps,
