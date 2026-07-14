@@ -38,7 +38,7 @@ npm run data:convert -- /path/to/cs-database.zip
 
 ## 배포
 
-- GitHub: https://github.com/back0319/DidimCode
+- GitHub: https://github.com/back0319/didim-code
 - Vercel 프로젝트: `didim-code`
 - 서비스: https://didim-code.vercel.app
 - 프로덕션 브랜치: `main`

@@ -60,7 +60,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
 
             <a
-              href="https://github.com/back0319/DidimCode"
+              href="https://github.com/back0319/didim-code"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
