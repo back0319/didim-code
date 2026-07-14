@@ -30,7 +30,9 @@ const Home: React.FC = () => {
               </h1>
               
               <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-                DidimCode는 Monaco Editor에서 Python 알고리즘 문제를 풀고, 코드의 실행 흐름을 단계별로 시각화하며, 정답 대신 한 가지 핵심 힌트로 풀이를 개선하는 학습 사이트입니다.
+                <span className="block">DidimCode는 Python 알고리즘 문제를 풀고,</span>
+                <span className="block">코드의 실행 흐름을 단계별로 시각화하며,</span>
+                <span className="block">정답 대신 한 가지 핵심 힌트로 풀이를 개선하는 학습 사이트입니다.</span>
               </p>
               
               <div className="flex justify-center">
