@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="didim" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F46E5" />
+      <stop offset="1" stop-color="#7C3AED" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#didim)" />
+  <path
+    d="M13 47h13V37h12V27h13"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="m45 21 6 6-6 6"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
