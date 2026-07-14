@@ -5,24 +5,56 @@ interface EncodedObject {
 }
 
 type EncodedValue = string | number | boolean | null | EncodedValue[] | EncodedObject;
+type ValueKind = 'scalar' | 'list' | 'tuple' | 'dict' | 'set' | 'object';
 
-interface VisualizationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  code: string;
-  inputData?: string;
+interface ValueState {
+  kind: ValueKind;
+  value: EncodedValue;
+  length?: number | null;
+  truncated_count?: number;
+}
+
+interface ItemChange {
+  key: string | number;
+  kind: 'created' | 'updated' | 'deleted';
+  before?: EncodedValue;
+  after?: EncodedValue;
+}
+
+interface VariableChange {
+  scope: 'global' | 'local';
+  call_id?: number | null;
+  name: string;
+  kind: 'created' | 'updated' | 'deleted' | 'mutated';
+  before?: ValueState;
+  after?: ValueState;
+  items?: ItemChange[];
+}
+
+interface CallBinding {
+  expression: string;
+  parameter: string;
+  value: EncodedValue;
+}
+
+interface CallSite {
+  line: number;
+  expression: string;
+  order: number;
+  bindings: CallBinding[];
 }
 
 interface StackFrame {
   func_name: string;
   call_id?: number;
   encoded_locals: Record<string, EncodedValue>;
+  local_states?: Record<string, ValueState>;
   ordered_varnames?: string[];
   line_number: number;
 }
 
 interface CodeBlock {
-  type: 'function' | 'if_block' | 'for_loop' | 'while_loop' | 'with_block' | 'try_block';
+  type: 'function' | 'if_block' | 'else_block' | 'for_loop' | 'while_loop';
   label: string;
   name: string;
   expression: string;
@@ -31,20 +63,38 @@ interface CodeBlock {
   depth: number;
 }
 
+interface ControlState {
+  kind: 'condition' | 'loop' | 'loop_control';
+  result?: boolean;
+  iteration?: number;
+  finished?: boolean;
+  action?: 'break' | 'continue';
+}
+
 interface Step {
   line: number;
   operation: string;
+  statement_kind?: string;
+  phase?: 'before' | 'after' | 'call' | 'return' | 'error';
   variables: Record<string, EncodedValue>;
+  variables_state?: Record<string, ValueState>;
   output?: string;
+  output_delta?: string;
   description?: string;
   stack_frames?: StackFrame[];
   globals_vars?: Record<string, EncodedValue>;
+  globals_state?: Record<string, ValueState>;
   func_name?: string;
   call_id?: number;
   current_blocks?: CodeBlock[];
   condition_result?: boolean | null;
   loop_iteration?: number | null;
   loop_finished?: boolean;
+  control_state?: ControlState | null;
+  changes?: VariableChange[];
+  input_event?: { prompt: string; value: string } | null;
+  call_site?: CallSite | null;
+  return_value?: EncodedValue;
 }
 
 interface CallTreeNode {
@@ -55,13 +105,50 @@ interface CallTreeNode {
   call_step: number;
   return_step: number | null;
   return_value: EncodedValue;
+  error_step?: number | null;
+  call_site?: CallSite | null;
+}
+
+interface CodeToken {
+  name: string;
+  start: number;
+  end: number;
 }
 
 interface VisualizationData {
   steps: Step[];
   code_lines: string[];
   call_tree?: CallTreeNode[];
+  tokens_by_line?: Record<string, CodeToken[]>;
+  truncated?: boolean;
+  truncation_reason?: string | null;
 }
+
+interface VisualizationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  code: string;
+  inputData?: string;
+}
+
+const COLOR_PALETTE = [
+  { highlight: 'bg-blue-200 text-blue-950', box: 'border-blue-200 bg-blue-50', text: 'text-blue-900', accent: 'border-blue-500' },
+  { highlight: 'bg-green-200 text-green-950', box: 'border-green-200 bg-green-50', text: 'text-green-900', accent: 'border-green-500' },
+  { highlight: 'bg-purple-200 text-purple-950', box: 'border-purple-200 bg-purple-50', text: 'text-purple-900', accent: 'border-purple-500' },
+  { highlight: 'bg-pink-200 text-pink-950', box: 'border-pink-200 bg-pink-50', text: 'text-pink-900', accent: 'border-pink-500' },
+  { highlight: 'bg-yellow-200 text-yellow-950', box: 'border-yellow-200 bg-yellow-50', text: 'text-yellow-900', accent: 'border-yellow-500' },
+  { highlight: 'bg-indigo-200 text-indigo-950', box: 'border-indigo-200 bg-indigo-50', text: 'text-indigo-900', accent: 'border-indigo-500' },
+  { highlight: 'bg-red-200 text-red-950', box: 'border-red-200 bg-red-50', text: 'text-red-900', accent: 'border-red-500' },
+  { highlight: 'bg-orange-200 text-orange-950', box: 'border-orange-200 bg-orange-50', text: 'text-orange-900', accent: 'border-orange-500' },
+] as const;
+
+const variableColor = (name: string) => {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = ((hash * 31) + name.charCodeAt(index)) >>> 0;
+  }
+  return COLOR_PALETTE[hash % COLOR_PALETTE.length];
+};
 
 const formatValue = (value: EncodedValue | undefined): string => {
   if (value === undefined) return '';
@@ -74,6 +161,14 @@ const formatValue = (value: EncodedValue | undefined): string => {
   return String(value);
 };
 
+const inferValueState = (value: EncodedValue): ValueState => {
+  if (Array.isArray(value)) return { kind: 'list', value, length: value.length };
+  if (value !== null && typeof value === 'object') {
+    return { kind: 'dict', value, length: Object.keys(value).length };
+  }
+  return { kind: 'scalar', value };
+};
+
 const callSignature = (call: CallTreeNode): string => {
   const argumentsText = Object.entries(call.arguments)
     .map(([name, value]) => `${name}=${formatValue(value)}`)
@@ -81,31 +176,211 @@ const callSignature = (call: CallTreeNode): string => {
   return `${call.func_name}(${argumentsText})`;
 };
 
-const VariableRows = ({ values }: { values: Record<string, EncodedValue> }) => {
-  const entries = Object.entries(values).filter(([name]) => name !== '__return__');
+function InlineIdentifiers({ text, visibleNames }: { text: string; visibleNames: Set<string> }) {
+  const parts: React.ReactNode[] = [];
+  let index = 0;
+  let plainStart = 0;
 
-  if (entries.length === 0) {
-    return <p className="text-xs text-gray-400">표시할 변수가 없습니다.</p>;
+  const flushPlain = (end: number) => {
+    if (end > plainStart) parts.push(text.slice(plainStart, end));
+  };
+
+  while (index < text.length) {
+    const character = text[index];
+    if (character === '"' || character === "'") {
+      const quote = character;
+      index += 1;
+      while (index < text.length) {
+        if (text[index] === '\\') {
+          index += 2;
+          continue;
+        }
+        index += 1;
+        if (text[index - 1] === quote) break;
+      }
+      continue;
+    }
+    if (/[A-Za-z_]/.test(character)) {
+      let end = index + 1;
+      while (end < text.length && /[A-Za-z0-9_]/.test(text[end])) end += 1;
+      const name = text.slice(index, end);
+      if (visibleNames.has(name)) {
+        flushPlain(index);
+        const colors = variableColor(name);
+        parts.push(
+          <span key={`${name}-${index}`} className={`${colors.highlight} rounded px-1 font-semibold`}>
+            {name}
+          </span>,
+        );
+        plainStart = end;
+      }
+      index = end;
+      continue;
+    }
+    index += 1;
   }
+  flushPlain(text.length);
+  return <>{parts}</>;
+}
+
+function TokenizedCodeLine({
+  line,
+  tokens,
+  visibleNames,
+}: {
+  line: string;
+  tokens: CodeToken[];
+  visibleNames: Set<string>;
+}) {
+  if (!tokens.length) return <>{line || ' '}</>;
+  const fragments: React.ReactNode[] = [];
+  let cursor = 0;
+  tokens.forEach((token) => {
+    if (token.start > cursor) fragments.push(line.slice(cursor, token.start));
+    const name = line.slice(token.start, token.end);
+    if (visibleNames.has(token.name)) {
+      const colors = variableColor(token.name);
+      fragments.push(
+        <span key={`${token.start}-${token.end}`} className={`${colors.highlight} rounded px-0.5 font-semibold`}>
+          {name}
+        </span>,
+      );
+    } else {
+      fragments.push(name);
+    }
+    cursor = token.end;
+  });
+  if (cursor < line.length) fragments.push(line.slice(cursor));
+  return <>{fragments}</>;
+}
+
+function CollectionValue({ state, changedItems }: { state: ValueState; changedItems: Set<string> }) {
+  const value = state.value;
+  if ((state.kind === 'list' || state.kind === 'tuple') && Array.isArray(value)) {
+    return (
+      <div className="mt-2 grid grid-cols-4 gap-1.5">
+        {value.map((item, index) => (
+          <div
+            key={index}
+            className={`min-w-0 rounded border px-1.5 py-1 text-center ${
+              changedItems.has(String(index)) ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white/70'
+            }`}
+          >
+            <div className="text-[10px] text-gray-400">{index}</div>
+            <div className="break-all font-mono text-xs text-gray-900">{formatValue(item)}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (state.kind === 'dict' && value !== null && !Array.isArray(value) && typeof value === 'object') {
+    return (
+      <div className="mt-2 space-y-1">
+        {Object.entries(value).map(([key, item]) => (
+          <div
+            key={key}
+            className={`flex min-w-0 items-start justify-between gap-2 rounded border px-2 py-1 ${
+              changedItems.has(key) ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white/70'
+            }`}
+          >
+            <span className="break-all font-mono text-[11px] text-gray-500">{key}</span>
+            <span className="break-all text-right font-mono text-xs text-gray-900">{formatValue(item)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (state.kind === 'set' && Array.isArray(value)) {
+    return (
+      <div className="mt-2 flex flex-wrap gap-1">
+        {value.map((item, index) => (
+          <span
+            key={`${formatValue(item)}-${index}`}
+            className={`rounded border px-2 py-1 font-mono text-xs ${
+              changedItems.has(formatValue(item)) ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white/70'
+            }`}
+          >
+            {formatValue(item)}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  return <div className="mt-1 break-all font-mono text-sm text-gray-900">{formatValue(value)}</div>;
+}
+
+function VariableCards({
+  values,
+  states,
+  changes,
+  orderedNames,
+}: {
+  values: Record<string, EncodedValue>;
+  states?: Record<string, ValueState>;
+  changes: VariableChange[];
+  orderedNames?: string[];
+}) {
+  const names = orderedNames?.filter((name) => name !== '__return__' && name in values)
+    ?? Object.keys(values).filter((name) => name !== '__return__');
+  if (!names.length) return <p className="text-xs text-gray-400">표시할 변수가 없습니다.</p>;
 
   return (
-    <dl className="space-y-1.5">
-      {entries.map(([name, value]) => (
-        <div key={name} className="flex items-start justify-between gap-3 font-mono text-xs">
-          <dt className="font-semibold text-gray-700">{name}</dt>
-          <dd className="max-w-[70%] break-all text-right text-gray-900">{formatValue(value)}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="space-y-2">
+      {names.map((name) => {
+        const state = states?.[name] ?? inferValueState(values[name]);
+        const change = changes.find((candidate) => candidate.name === name);
+        const changedItems = new Set((change?.items || []).map((item) => String(item.key)));
+        const colors = variableColor(name);
+        return (
+          <div
+            key={name}
+            className={`min-w-0 rounded-lg border p-2.5 ${colors.box} ${change ? `border-l-4 ${colors.accent}` : ''}`}
+          >
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              <span className={`break-all font-mono text-sm font-bold ${colors.text}`}>{name}</span>
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                {state.kind}
+              </span>
+            </div>
+            <CollectionValue state={state} changedItems={changedItems} />
+            {!!state.truncated_count && state.truncated_count > 0 && (
+              <p className="mt-1 text-[10px] text-gray-500">외 {state.truncated_count}개</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
-};
+}
 
-const VisualizationModal: React.FC<VisualizationModalProps> = ({
+function BindingRows({ bindings, visibleNames }: { bindings: CallBinding[]; visibleNames: Set<string> }) {
+  if (!bindings.length) return null;
+  return (
+    <div className="mt-2 space-y-1 rounded-md border border-indigo-100 bg-white/80 p-2">
+      {bindings.map((binding, index) => {
+        const parameterColors = variableColor(binding.parameter);
+        return (
+          <div key={`${binding.parameter}-${index}`} className="flex min-w-0 flex-wrap items-center gap-1 font-mono text-[11px]">
+            <span className="break-all text-gray-700">
+              <InlineIdentifiers text={binding.expression} visibleNames={visibleNames} /> = {formatValue(binding.value)}
+            </span>
+            <span className="text-gray-400">→</span>
+            <span className={`${parameterColors.highlight} rounded px-1 font-semibold`}>
+              {binding.parameter} = {formatValue(binding.value)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function VisualizationModal({
   isOpen,
   onClose,
   code,
   inputData = '',
-}) => {
+}: VisualizationModalProps) {
   const [visualizationData, setVisualizationData] = useState<VisualizationData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,13 +389,11 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
 
   useEffect(() => {
     if (!isOpen || !code) return;
-
     const controller = new AbortController();
     const generateVisualization = async () => {
       setIsLoading(true);
       setError(null);
       setIsPlaying(false);
-
       try {
         const response = await fetch('/api/visualize', {
           method: 'POST',
@@ -129,9 +402,7 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
           signal: controller.signal,
         });
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || '시각화 생성에 실패했습니다.');
-        }
+        if (!response.ok) throw new Error(data.message || '시각화 생성에 실패했습니다.');
         setVisualizationData(data);
         setCurrentStep(0);
       } catch (requestError) {
@@ -141,7 +412,6 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
         if (!controller.signal.aborted) setIsLoading(false);
       }
     };
-
     generateVisualization();
     return () => controller.abort();
   }, [isOpen, code, inputData]);
@@ -152,7 +422,6 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
       setIsPlaying(false);
       return;
     }
-
     const timer = window.setTimeout(() => setCurrentStep((step) => step + 1), 850);
     return () => window.clearTimeout(timer);
   }, [isPlaying, visualizationData, currentStep]);
@@ -167,19 +436,20 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
   }, [isOpen, onClose]);
 
   const step = visualizationData?.steps[currentStep];
-  const visibleCalls = useMemo(
-    () => (visualizationData?.call_tree || []).filter((call) => call.call_step <= currentStep),
-    [visualizationData, currentStep],
-  );
-  const callsById = useMemo(
-    () => new Map(visibleCalls.map((call) => [call.id, call])),
-    [visibleCalls],
-  );
+  const allCalls = useMemo(() => visualizationData?.call_tree || [], [visualizationData]);
+  const callsById = useMemo(() => new Map(allCalls.map((call) => [call.id, call])), [allCalls]);
   const activeFrames = (step?.stack_frames || []).filter((frame) => frame.func_name !== 'Global frame');
   const activeCallIds = new Set(
     activeFrames.map((frame) => frame.call_id).filter((callId): callId is number => typeof callId === 'number'),
   );
-  const currentCallId = activeFrames[activeFrames.length - 1]?.call_id;
+  const currentCallId = activeFrames[activeFrames.length - 1]?.call_id ?? step?.call_id;
+  const visibleNames = useMemo(() => {
+    const names = new Set(Object.keys(step?.variables_state || step?.variables || {}));
+    (step?.stack_frames || []).forEach((frame) => {
+      Object.keys(frame.local_states || frame.encoded_locals || {}).forEach((name) => names.add(name));
+    });
+    return names;
+  }, [step]);
 
   const frameTitle = (frame: StackFrame): string => {
     const call = typeof frame.call_id === 'number' ? callsById.get(frame.call_id) : undefined;
@@ -190,39 +460,64 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
     if (!visualizationData || !step) return undefined;
     for (let index = currentStep; index >= 0; index -= 1) {
       const candidate = visualizationData.steps[index];
-      if (candidate.call_id === step.call_id && candidate.line === block.start_line) {
-        return candidate;
-      }
+      if (candidate.call_id === step.call_id && candidate.line === block.start_line) return candidate;
     }
     return undefined;
   };
 
+  const callStatus = (call: CallTreeNode) => {
+    if (typeof call.error_step === 'number' && call.error_step <= currentStep) {
+      return { label: '오류', className: 'border-red-300 bg-red-50 text-red-900' };
+    }
+    if (call.call_step > currentStep) {
+      return { label: '다음 호출', className: 'border-dashed border-gray-300 bg-gray-50 text-gray-500' };
+    }
+    if (call.id === currentCallId) {
+      return { label: '실행 중', className: 'border-indigo-500 bg-indigo-50 text-indigo-950' };
+    }
+    if (activeCallIds.has(call.id)) {
+      return { label: '하위 호출 대기', className: 'border-amber-300 bg-amber-50 text-amber-950' };
+    }
+    if (call.return_step !== null && call.return_step <= currentStep) {
+      return { label: `반환 ${formatValue(call.return_value)}`, className: 'border-emerald-300 bg-emerald-50 text-emerald-950' };
+    }
+    return { label: '호출됨', className: 'border-gray-300 bg-white text-gray-800' };
+  };
+
+  const callDepth = (call: CallTreeNode) => {
+    let depth = 0;
+    let parentId = call.parent_id;
+    while (parentId !== null && depth < 20) {
+      depth += 1;
+      parentId = callsById.get(parentId)?.parent_id ?? null;
+    }
+    return depth;
+  };
+
   const renderCurrentFlow = () => {
     if (!step) return null;
-
     const currentFrame = activeFrames[activeFrames.length - 1];
     const currentBlocks = (step.current_blocks || []).filter((block) => block.type !== 'function');
-    const currentFunctionBlock = (step.current_blocks || []).find((block) => block.type === 'function');
-    const title = currentFrame
-      ? frameTitle(currentFrame)
-      : currentFunctionBlock
-        ? `${currentFunctionBlock.name} 정의`
-        : '전역 코드';
+    const functionBlock = (step.current_blocks || []).find((block) => block.type === 'function');
+    const title = currentFrame ? frameTitle(currentFrame) : functionBlock ? `${functionBlock.expression} 정의` : '전역 코드';
+    const stepChanges = step.changes || [];
 
     return (
       <section aria-labelledby="current-flow-title" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h4 id="current-flow-title" className="text-sm font-semibold text-gray-900">현재 실행 흐름</h4>
-          <span className="text-xs text-gray-500">{step.line}번 줄</span>
-        </div>
-
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-mono text-sm font-semibold text-indigo-950">{title}</span>
-            <span className="rounded-md bg-white px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
+        <h4 id="current-flow-title" className="text-sm font-semibold text-gray-900">현재 실행 흐름</h4>
+        <div className="min-w-0 rounded-lg border border-indigo-300 bg-indigo-50 p-3">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 rounded bg-indigo-600 px-2 py-0.5 font-mono text-xs font-bold text-white">def</span>
+              <span className="break-all font-mono text-sm font-semibold text-indigo-950">{title}</span>
+            </div>
+            <span className="rounded border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700">
               {step.description || '코드 실행'}
             </span>
           </div>
+          {step.call_site?.bindings && (
+            <BindingRows bindings={step.call_site.bindings} visibleNames={visibleNames} />
+          )}
 
           {currentBlocks.length > 0 && (
             <div className="mt-3 space-y-2 border-l-2 border-indigo-200 pl-3">
@@ -230,30 +525,33 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
                 const controlStep = latestControlStep(block);
                 const isCondition = block.type === 'if_block';
                 const isLoop = block.type === 'for_loop' || block.type === 'while_loop';
-
+                const isElse = block.type === 'else_block';
+                const palette = isLoop
+                  ? 'border-purple-300 bg-purple-50 text-purple-950'
+                  : 'border-blue-300 bg-blue-50 text-blue-950';
+                const badge = isLoop ? 'bg-purple-600' : 'bg-blue-600';
                 return (
-                  <div key={`${block.type}-${block.start_line}`} className="rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-semibold text-gray-500">
-                        {isCondition ? '조건' : isLoop ? '반복' : block.label}
+                  <div key={`${block.type}-${block.start_line}`} className={`min-w-0 rounded-lg border p-2.5 ${palette}`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span className={`rounded px-2 py-0.5 font-mono text-xs font-bold text-white ${badge}`}>
+                        {block.label}
                       </span>
-                      <code className="break-all text-xs font-semibold text-gray-900">
-                        {block.label} {block.expression}
-                      </code>
+                      {!!block.expression && (
+                        <code className="min-w-0 break-all text-xs font-semibold">
+                          <InlineIdentifiers text={block.expression} visibleNames={visibleNames} />
+                        </code>
+                      )}
                       {isCondition && typeof controlStep?.condition_result === 'boolean' && (
-                        <span className={`ml-auto rounded-md px-2 py-0.5 text-xs font-semibold ${
-                          controlStep.condition_result
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-gray-100 text-gray-600'
+                        <span className={`ml-auto rounded px-2 py-0.5 text-xs font-bold text-white ${
+                          controlStep.condition_result ? 'bg-green-600' : 'bg-red-600'
                         }`}>
                           {controlStep.condition_result ? '참' : '거짓'}
                         </span>
                       )}
+                      {isElse && <span className="ml-auto text-xs font-semibold text-blue-700">선택된 분기</span>}
                       {isLoop && typeof controlStep?.loop_iteration === 'number' && (
-                        <span className={`ml-auto rounded-md px-2 py-0.5 text-xs font-semibold ${
-                          controlStep.loop_finished
-                            ? 'bg-gray-100 text-gray-600'
-                            : 'bg-violet-100 text-violet-800'
+                        <span className={`ml-auto rounded px-2 py-0.5 text-xs font-bold ${
+                          controlStep.loop_finished ? 'bg-gray-200 text-gray-700' : 'bg-purple-200 text-purple-900'
                         }`}>
                           {controlStep.loop_finished ? '반복 종료' : `${controlStep.loop_iteration}번째 반복`}
                         </span>
@@ -265,89 +563,100 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
             </div>
           )}
         </div>
+
+        {(stepChanges.length > 0 || step.input_event || step.output_delta || step.control_state?.action) && (
+          <div className="rounded-lg border border-gray-200 bg-white p-3">
+            <h5 className="mb-2 text-xs font-semibold text-gray-500">이번 단계에서 달라진 점</h5>
+            <div className="space-y-1.5 text-xs text-gray-700">
+              {step.input_event && <p>입력값 <code className="font-semibold">{formatValue(step.input_event.value)}</code>을 사용했습니다.</p>}
+              {stepChanges.slice(0, 5).map((change) => {
+                const colors = variableColor(change.name);
+                const action = change.kind === 'created' ? '생성' : change.kind === 'deleted' ? '삭제' : change.kind === 'mutated' ? '내용 변경' : '값 변경';
+                return (
+                  <p key={`${change.scope}-${change.call_id}-${change.name}`}>
+                    <span className={`${colors.highlight} rounded px-1 font-mono font-semibold`}>{change.name}</span> {action}
+                  </p>
+                );
+              })}
+              {step.output_delta && <p>출력에 <code className="font-semibold">{formatValue(step.output_delta.replace(/\n$/, ''))}</code>이 추가됐습니다.</p>}
+              {step.control_state?.action === 'break' && <p>현재 반복문을 중단했습니다.</p>}
+              {step.control_state?.action === 'continue' && <p>남은 코드를 건너뛰고 다음 반복으로 이동했습니다.</p>}
+            </div>
+          </div>
+        )}
       </section>
     );
   };
 
-  const renderCallTree = () => {
-    if (visibleCalls.length === 0) return null;
-
-    const visibleIds = new Set(visibleCalls.map((call) => call.id));
-    const childrenByParent = new Map<number | null, CallTreeNode[]>();
-    visibleCalls.forEach((call) => {
-      const parentId = call.parent_id !== null && visibleIds.has(call.parent_id) ? call.parent_id : null;
-      const children = childrenByParent.get(parentId) || [];
-      children.push(call);
-      childrenByParent.set(parentId, children);
-    });
-
-    const renderBranch = (call: CallTreeNode): React.ReactNode => {
-      const children = childrenByParent.get(call.id) || [];
-      const isCurrent = call.id === currentCallId;
-      const isWaiting = activeCallIds.has(call.id) && !isCurrent;
-      const hasReturned = call.return_step !== null && call.return_step <= currentStep;
-      const statusClass = isCurrent
-        ? 'border-indigo-500 bg-indigo-50 text-indigo-950'
-        : isWaiting
-          ? 'border-amber-300 bg-amber-50 text-amber-950'
-          : hasReturned
-            ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
-            : 'border-gray-200 bg-white text-gray-900';
-
-      return (
-        <div key={call.id} className="flex min-w-max flex-col items-center">
-          <div className={`w-40 rounded-lg border px-3 py-2 shadow-sm ${statusClass}`}>
-            <div className="break-all font-mono text-xs font-semibold">{callSignature(call)}</div>
-            <div className="mt-1 text-[11px] font-medium">
-              {isCurrent
-                ? '실행 중'
-                : isWaiting
-                  ? '하위 호출 대기'
-                  : hasReturned
-                    ? `반환 ${formatValue(call.return_value)}`
-                    : '호출됨'}
-            </div>
-          </div>
-          {children.length > 0 && (
-            <div className="mt-3 border-t border-gray-300 pt-3">
-              <div className="flex items-start justify-center gap-3">
-                {children.map((child) => renderBranch(child))}
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    };
+  const renderCalls = () => {
+    if (!allCalls.length) return null;
+    const startedCalls = allCalls.filter((call) => call.call_step <= currentStep);
+    const activeCall = typeof currentCallId === 'number' ? callsById.get(currentCallId) : undefined;
+    const focusCall = activeCall ?? startedCalls[startedCalls.length - 1];
+    if (!focusCall) return null;
+    const focusParentId = focusCall.parent_id ?? focusCall.id;
+    const relatedCalls = focusParentId === null
+      ? allCalls.filter((call) => call.parent_id === null)
+      : allCalls.filter((call) => call.parent_id === focusParentId);
 
     return (
-      <section aria-labelledby="call-tree-title" className="space-y-2 border-t border-gray-200 pt-4">
+      <section aria-labelledby="call-flow-title" className="space-y-3 border-t border-gray-200 pt-4">
         <div>
-          <h4 id="call-tree-title" className="text-sm font-semibold text-gray-900">함수 호출 관계</h4>
-          <p className="mt-1 text-xs leading-relaxed text-gray-500">
-            같은 부모에서 이어진 호출은 나란히 보여주며, 실제 순서에 따라 실행 중·대기·반환 상태를 구분합니다.
-          </p>
+          <h4 id="call-flow-title" className="text-sm font-semibold text-gray-900">함수 호출 흐름</h4>
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">같은 식의 호출을 실제 실행 순서와 상태로 구분합니다.</p>
         </div>
-        <div className="overflow-x-auto pb-2">
-          <div className="flex min-w-max items-start gap-4 pt-1">
-            {(childrenByParent.get(null) || []).map((call) => renderBranch(call))}
+        {relatedCalls.length > 0 && (
+          <div className="grid min-w-0 grid-cols-2 gap-2">
+            {relatedCalls.map((call) => {
+              const status = callStatus(call);
+              return (
+                <div key={call.id} className={`min-w-0 rounded-lg border p-2.5 ${status.className}`}>
+                  <div className="break-all font-mono text-xs font-bold">{callSignature(call)}</div>
+                  <div className="mt-1 text-[11px] font-semibold">{status.label}</div>
+                  {call.call_site?.bindings && (
+                    <BindingRows bindings={call.call_site.bindings} visibleNames={visibleNames} />
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
+        <details className="rounded-lg border border-gray-200 bg-white">
+          <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-gray-700">전체 호출 기록</summary>
+          <div className="max-h-72 space-y-1 overflow-y-auto border-t border-gray-100 p-2">
+            {startedCalls.map((call) => {
+              const status = callStatus(call);
+              const depth = callDepth(call);
+              return (
+                <div
+                  key={call.id}
+                  className="min-w-0 border-l-2 border-gray-200 py-1 pl-2"
+                  style={{ marginLeft: `${Math.min(depth, 4) * 10}px` }}
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <span className="break-all font-mono text-[11px] font-semibold text-gray-800">{callSignature(call)}</span>
+                    <span className="shrink-0 text-[10px] font-medium text-gray-500">{status.label}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </details>
       </section>
     );
   };
 
   if (!isOpen) return null;
-
   const lastStep = Math.max((visualizationData?.steps.length || 1) - 1, 0);
   const progress = visualizationData ? ((currentStep + 1) / visualizationData.steps.length) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/60 p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="코드 시각화">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/60 p-4" role="dialog" aria-modal="true" aria-label="코드 시각화">
       <div className="flex h-full w-full max-w-[1600px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6">
+        <header className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-950">코드 시각화</h2>
-            <p className="mt-0.5 text-xs text-gray-500">실제 실행 순서에 따라 함수, 조건, 반복과 변수 변화를 보여줍니다.</p>
+            <p className="mt-0.5 text-xs text-gray-500">실제 실행 순서에 따라 변수, 조건, 반복과 함수 호출을 보여줍니다.</p>
           </div>
           <button onClick={onClose} className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900" aria-label="시각화 닫기">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -373,36 +682,57 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
 
         {!isLoading && !error && visualizationData && step && (
           <>
-            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(220px,0.8fr)_minmax(340px,1.35fr)_minmax(340px,1.35fr)] lg:overflow-hidden">
-              <section className="min-h-[18rem] border-b border-gray-200 lg:min-h-0 lg:border-b-0 lg:border-r" aria-labelledby="state-title">
-                <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-                  <h3 id="state-title" className="text-sm font-semibold text-gray-900">실행 상태</h3>
+            {visualizationData.truncated && (
+              <div className="border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs font-medium text-amber-800">
+                실행 단계가 많아 {visualizationData.steps.length}단계까지만 표시합니다.
+              </div>
+            )}
+            <div className="grid min-h-0 flex-1 grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.25fr)_minmax(420px,1.4fr)] overflow-hidden">
+              <section className="min-h-0 min-w-0 border-r border-gray-200" aria-labelledby="state-title">
+                <div className="border-b border-blue-200 bg-blue-50 px-4 py-3">
+                  <h3 id="state-title" className="text-sm font-semibold text-blue-900">실행 상태</h3>
                 </div>
-                <div className="space-y-4 p-4 lg:h-[calc(100%-45px)] lg:overflow-y-auto">
+                <div className="h-[calc(100%-45px)] space-y-4 overflow-y-auto overflow-x-hidden p-3">
                   {Object.keys(step.globals_vars || {}).length > 0 && (
                     <div>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">전역 변수</h4>
-                      <div className="rounded-lg border border-gray-200 bg-white p-3">
-                        <VariableRows values={step.globals_vars || {}} />
-                      </div>
+                      <h4 className="mb-2 text-xs font-semibold text-gray-500">전역 변수</h4>
+                      <VariableCards
+                        values={step.globals_vars || {}}
+                        states={step.globals_state}
+                        changes={(step.changes || []).filter((change) => change.scope === 'global')}
+                      />
                     </div>
                   )}
 
                   {activeFrames.length > 0 && (
                     <div>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">호출 스택</h4>
+                      <h4 className="mb-2 text-xs font-semibold text-gray-500">함수 호출 스택</h4>
                       <div className="space-y-2">
                         {activeFrames.map((frame, index) => {
                           const isCurrent = index === activeFrames.length - 1;
+                          const call = typeof frame.call_id === 'number' ? callsById.get(frame.call_id) : undefined;
+                          const localChanges = (step.changes || []).filter(
+                            (change) => change.scope === 'local' && change.call_id === frame.call_id,
+                          );
                           return (
-                            <div key={`${frame.call_id || frame.func_name}-${index}`} className={`rounded-lg border p-3 ${
-                              isCurrent ? 'border-indigo-300 bg-indigo-50/60' : 'border-gray-200 bg-white'
+                            <div key={`${frame.call_id || frame.func_name}-${index}`} className={`min-w-0 rounded-lg border p-2.5 ${
+                              isCurrent ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white'
                             }`}>
-                              <div className="mb-2 flex items-center justify-between gap-2">
-                                <span className="break-all font-mono text-xs font-semibold text-gray-900">{frameTitle(frame)}</span>
-                                {isCurrent && <span className="text-[11px] font-semibold text-indigo-700">현재</span>}
+                              <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+                                <span className="break-all font-mono text-xs font-bold text-gray-900">{frameTitle(frame)}</span>
+                                {isCurrent && <span className="shrink-0 rounded bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white">현재</span>}
                               </div>
-                              <VariableRows values={frame.encoded_locals || {}} />
+                              {call?.call_site?.bindings && (
+                                <BindingRows bindings={call.call_site.bindings} visibleNames={visibleNames} />
+                              )}
+                              <div className="mt-2">
+                                <VariableCards
+                                  values={frame.encoded_locals || {}}
+                                  states={frame.local_states}
+                                  changes={localChanges}
+                                  orderedNames={frame.ordered_varnames}
+                                />
+                              </div>
                             </div>
                           );
                         })}
@@ -416,33 +746,34 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
                 </div>
               </section>
 
-              <section className="min-h-[24rem] border-b border-gray-200 lg:min-h-0 lg:border-b-0 lg:border-r" aria-labelledby="flow-title">
-                <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-                  <h3 id="flow-title" className="text-sm font-semibold text-gray-900">코드 흐름</h3>
+              <section className="min-h-0 min-w-0 border-r border-gray-200" aria-labelledby="flow-title">
+                <div className="border-b border-green-200 bg-green-50 px-4 py-3">
+                  <h3 id="flow-title" className="text-sm font-semibold text-green-900">코드 흐름</h3>
                 </div>
-                <div className="space-y-4 p-4 lg:h-[calc(100%-45px)] lg:overflow-y-auto">
+                <div className="h-[calc(100%-45px)] space-y-4 overflow-y-auto overflow-x-hidden p-4">
                   {renderCurrentFlow()}
-                  {renderCallTree()}
+                  {renderCalls()}
                 </div>
               </section>
 
-              <section className="flex min-h-[28rem] flex-col lg:min-h-0" aria-labelledby="code-title">
-                <div className="border-b border-gray-700 bg-gray-900 px-4 py-3">
-                  <h3 id="code-title" className="text-sm font-semibold text-gray-100">코드</h3>
+              <section className="flex min-h-0 min-w-0 flex-col" aria-labelledby="code-title">
+                <div className="border-b border-purple-200 bg-purple-50 px-4 py-3">
+                  <h3 id="code-title" className="text-sm font-semibold text-purple-900">코드</h3>
                 </div>
                 <div className="min-h-0 flex-1 overflow-auto bg-gray-950 py-2 font-mono text-sm">
                   {visualizationData.code_lines.map((line, index) => {
                     const lineNumber = index + 1;
                     const isCurrentLine = step.line === lineNumber;
+                    const tokens = visualizationData.tokens_by_line?.[String(lineNumber)] || [];
                     return (
-                      <div key={lineNumber} className={`flex min-w-max ${isCurrentLine ? 'bg-indigo-500/20' : ''}`}>
-                        <span className={`w-12 flex-shrink-0 select-none py-1 pr-4 text-right ${
-                          isCurrentLine ? 'font-semibold text-indigo-300' : 'text-gray-600'
+                      <div key={lineNumber} className={`flex ${isCurrentLine ? 'bg-yellow-400/25' : ''}`}>
+                        <span className={`w-12 shrink-0 select-none py-1 pr-4 text-right ${
+                          isCurrentLine ? 'font-bold text-yellow-300' : 'text-gray-600'
                         }`}>
                           {lineNumber}
                         </span>
-                        <code className={`min-w-0 whitespace-pre py-1 pr-6 ${isCurrentLine ? 'text-white' : 'text-gray-300'}`}>
-                          {line || ' '}
+                        <code className={`min-w-0 whitespace-pre py-1 pr-6 ${isCurrentLine ? 'text-yellow-50' : 'text-gray-300'}`}>
+                          <TokenizedCodeLine line={line} tokens={tokens} visibleNames={visibleNames} />
                         </code>
                       </div>
                     );
@@ -461,28 +792,16 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
               </section>
             </div>
 
-            <footer className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <footer className="border-t border-gray-200 bg-white px-6 py-3">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setCurrentStep(0)} disabled={currentStep === 0} className="rounded-md border border-gray-200 p-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" title="처음으로" aria-label="처음 단계">
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" /></svg>
+                  <button onClick={() => setCurrentStep(0)} disabled={currentStep === 0} className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">처음</button>
+                  <button onClick={() => setCurrentStep((value) => Math.max(0, value - 1))} disabled={currentStep === 0} className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">이전</button>
+                  <button onClick={() => setIsPlaying((value) => !value)} className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+                    {isPlaying ? '일시정지' : '재생'}
                   </button>
-                  <button onClick={() => setCurrentStep((value) => Math.max(0, value - 1))} disabled={currentStep === 0} className="rounded-md border border-gray-200 p-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" title="이전" aria-label="이전 단계">
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" /></svg>
-                  </button>
-                  <button onClick={() => setIsPlaying((value) => !value)} className="rounded-md bg-indigo-600 p-2 text-white hover:bg-indigo-700" title={isPlaying ? '일시정지' : '재생'} aria-label={isPlaying ? '일시정지' : '자동 재생'}>
-                    {isPlaying ? (
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4a1 1 0 011-1h1a1 1 0 011 1v12a1 1 0 01-1 1H7a1 1 0 01-1-1V4zm5 0a1 1 0 011-1h1a1 1 0 011 1v12a1 1 0 01-1 1h-1a1 1 0 01-1-1V4z" /></svg>
-                    ) : (
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M6.3 3.8A1 1 0 015 4.67v10.66a1 1 0 001.3.95l8-5.33a1 1 0 000-1.9l-8-5.25z" /></svg>
-                    )}
-                  </button>
-                  <button onClick={() => setCurrentStep((value) => Math.min(lastStep, value + 1))} disabled={currentStep >= lastStep} className="rounded-md border border-gray-200 p-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" title="다음" aria-label="다음 단계">
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" /></svg>
-                  </button>
-                  <button onClick={() => setCurrentStep(lastStep)} disabled={currentStep >= lastStep} className="rounded-md border border-gray-200 p-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40" title="마지막으로" aria-label="마지막 단계">
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" /></svg>
-                  </button>
+                  <button onClick={() => setCurrentStep((value) => Math.min(lastStep, value + 1))} disabled={currentStep >= lastStep} className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">다음</button>
+                  <button onClick={() => setCurrentStep(lastStep)} disabled={currentStep >= lastStep} className="rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">마지막</button>
                 </div>
                 <span className="text-xs font-medium text-gray-600">{currentStep + 1} / {visualizationData.steps.length}</span>
               </div>
@@ -495,6 +814,4 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({
       </div>
     </div>
   );
-};
-
-export default VisualizationModal;
+}

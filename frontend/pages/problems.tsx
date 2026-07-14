@@ -111,7 +111,7 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
                   {/* Action Button */}
                   <button 
                     onClick={() => router.push(`/problems/${problem.id}`)}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
                     {problem.solved ? '다시 풀기' : '문제 풀기'}
                   </button>

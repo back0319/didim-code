@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
@@ -82,8 +82,17 @@ const CODE_TEMPLATE = `def solution():
 # 예시 실행
 print(solution())`;
 
+const getDefaultInput = (problem: Problem | null): string => {
+  if (!problem) return '';
+  return problem.test_cases?.[0]?.input
+    ?? problem.input_examples?.[0]
+    ?? problem.input
+    ?? '';
+};
+
 export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePageProps) {
   const router = useRouter();
+  const defaultInput = getDefaultInput(problem);
   const [code, setCode] = useState(CODE_TEMPLATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -93,7 +102,11 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   
   // 시각화 모달 관련 state
   const [isVisualizationModalOpen, setIsVisualizationModalOpen] = useState(false);
-  const [inputForVisualization, setInputForVisualization] = useState('');
+  const [inputForVisualization, setInputForVisualization] = useState(defaultInput);
+
+  useEffect(() => {
+    setInputForVisualization(defaultInput);
+  }, [defaultInput, problem?.id]);
   
   // 코드 실행 관련 state
   const [isRunning, setIsRunning] = useState(false);
