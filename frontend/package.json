@@ -10,10 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
-    "data:convert": "ruby scripts/convert-csv.rb"
+    "data:convert": "ruby scripts/convert-csv.rb",
+    "data:seed-sql": "node ../supabase/scripts/generate-problem-seed.mjs ../supabase/migrations/20260715013024_seed_beginner_problems.sql"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@supabase/supabase-js": "^2.110.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

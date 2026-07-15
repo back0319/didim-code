@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { GetStaticPaths, GetStaticProps } from 'next';
+import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import Layout from '../../components/Layout';
 import CodeRunner from '../../components/CodeRunner';
 import Feedback from '../../components/Feedback';
-import { getExemplarsByProblemId, getProblemById, getProblems } from '../../lib/catalog';
+import { getProblemById } from '../../lib/catalog';
 
 // Monaco Editor를 동적으로 로드 (SSR 이슈 방지)
 const MonacoEditor = dynamic(() => import('../../components/MonacoEditor'), {
@@ -35,22 +35,16 @@ interface Problem {
   description: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   category: string;
-  paradigms: string[];
-  expected_complexity: string;
+  input_format: string;
+  output_format: string;
+  constraints: string[];
+  starter_code: string;
   test_cases?: TestCase[];
   input?: string;
   output?: string;
   input_examples?: string[];
   output_examples?: string[];
   example_explanation?: string;
-}
-
-interface Solution {
-  id: number;
-  type: string;
-  code: string;
-  complexity: string;
-  explanation: string;
 }
 
 interface Feedback {
@@ -72,7 +66,7 @@ interface SubmissionResult {
 
 interface ProblemSolvePageProps {
   problem: Problem | null;
-  solutions: Solution[];
+  loadError: string | null;
 }
 
 const CODE_TEMPLATE = `def solution():
@@ -90,14 +84,12 @@ const getDefaultInput = (problem: Problem | null): string => {
     ?? '';
 };
 
-export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePageProps) {
+export default function ProblemSolvePage({ problem, loadError }: ProblemSolvePageProps) {
   const router = useRouter();
   const defaultInput = getDefaultInput(problem);
-  const [code, setCode] = useState(CODE_TEMPLATE);
+  const [code, setCode] = useState(problem?.starter_code || CODE_TEMPLATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
-  const [showSolution, setShowSolution] = useState(false);
-  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   // 시각화 모달 관련 state
@@ -105,8 +97,11 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   const [inputForVisualization, setInputForVisualization] = useState(defaultInput);
 
   useEffect(() => {
+    setCode(problem?.starter_code || CODE_TEMPLATE);
     setInputForVisualization(defaultInput);
-  }, [defaultInput, problem?.id]);
+    setRunResult(null);
+    setSubmissionResult(null);
+  }, [defaultInput, problem?.id, problem?.starter_code]);
   
   // 코드 실행 관련 state
   const [isRunning, setIsRunning] = useState(false);
@@ -117,15 +112,6 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
     executionTime?: number;
     memoryUsage?: number;
   } | null>(null);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-600 bg-green-50 border-green-200';
-      case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'Hard': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
 
   const handleSubmit = async () => {
     if (!code.trim()) {
@@ -194,12 +180,7 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
         feedback: result.feedback || []
       });
 
-      // 4. 피드백이 생성 중이면 폴링 시작
-      if (result.feedback_pending) {
-        pollFeedback(result.submission_id);
-      } else {
-        setIsAnalyzing(false);
-      }
+      setIsAnalyzing(false);
 
     } catch (error) {
       console.error('제출 오류:', error);
@@ -207,84 +188,6 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
       alert('제출 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const pollFeedback = async (submissionId: number, maxAttempts: number = 15) => {
-    let attempts = 0;
-    
-    const poll = async () => {
-      try {
-        console.log(`피드백 폴링 시도 ${attempts + 1}/${maxAttempts}:`, submissionId);
-        const response = await fetch(`/api/feedback/${submissionId}`);
-        
-        console.log('피드백 응답 상태:', response.status);
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('피드백 데이터:', result);
-          
-          if (result.feedback && result.feedback.length > 0) {
-            // 피드백이 도착함
-            console.log('피드백 수신 완료:', result.feedback.length, '개');
-            setSubmissionResult(prev => {
-              const updated = prev ? {
-                ...prev,
-                feedback: result.feedback
-              } : null;
-              console.log('업데이트된 submissionResult:', updated);
-              return updated;
-            });
-            setIsAnalyzing(false);
-            return;
-          } else {
-            console.log('피드백이 아직 비어있음');
-          }
-        } else {
-          console.log('피드백 응답 실패:', await response.text());
-        }
-        
-        // 피드백이 아직 없으면 재시도
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 2000); // 2초 후 재시도
-        } else {
-          console.log('피드백 폴링 타임아웃');
-          setIsAnalyzing(false);
-        }
-        
-      } catch (error) {
-        console.error('피드백 조회 오류:', error);
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 2000);
-        } else {
-          setIsAnalyzing(false);
-        }
-      }
-    };
-    
-    // 첫 시도는 3초 후에 (GPT 응답 대기)
-    setTimeout(poll, 3000);
-  };
-
-  const analyzeCode = async (submissionId: number) => {
-    try {
-      const response = await fetch(`/api/analyze/${submissionId}`, {
-        method: 'GET'
-      });
-
-      if (response.ok) {
-        const analysisResult = await response.json();
-        setSubmissionResult(prev => prev ? {
-          ...prev,
-          feedback: analysisResult.feedback || []
-        } : null);
-      }
-    } catch (error) {
-      console.error('분석 오류:', error);
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -339,7 +242,10 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
       <Layout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">문제를 찾을 수 없습니다</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              {loadError ? '문제를 불러오지 못했습니다' : '문제를 찾을 수 없습니다'}
+            </h1>
+            {loadError && <p className="mb-6 text-gray-600">{loadError}</p>}
             <button 
               onClick={() => router.push('/problems')}
               className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
@@ -401,6 +307,26 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
                     {problem.description}
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <h4 className="mb-2 font-semibold text-gray-900">입력 형식</h4>
+                    <p className="whitespace-pre-line text-sm leading-6 text-gray-700">{problem.input_format}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <h4 className="mb-2 font-semibold text-gray-900">출력 형식</h4>
+                    <p className="whitespace-pre-line text-sm leading-6 text-gray-700">{problem.output_format}</p>
+                  </div>
+                </div>
+
+                {problem.constraints.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <h4 className="mb-2 font-semibold text-gray-900">제한사항</h4>
+                    <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-gray-700">
+                      {problem.constraints.map((constraint) => <li key={constraint}>{constraint}</li>)}
+                    </ul>
+                  </div>
+                )}
 
                 {/* 입출력 예시 */}
                 <div className="space-y-4">
@@ -584,23 +510,22 @@ export default function ProblemSolvePage({ problem, solutions }: ProblemSolvePag
   );
 }
 
-export const getStaticPaths: GetStaticPaths = async () => ({
-  paths: getProblems().map((problem) => ({ params: { id: String(problem.id) } })),
-  fallback: false,
-});
+export const getServerSideProps: GetServerSideProps<ProblemSolvePageProps> = async ({ params, res }) => {
+  const id = Number(params?.id);
+  if (!Number.isInteger(id)) return { notFound: true };
 
-export const getStaticProps: GetStaticProps<ProblemSolvePageProps> = async (context) => {
-  const id = Number(context.params?.id);
-  const problem = getProblemById(id);
-  const solutions = getExemplarsByProblemId(id).map((solution) => ({
-    id: solution.id,
-    type: solution.type,
-    code: solution.code,
-    complexity: solution.complexity,
-    explanation: solution.explanation || '',
-  }));
-
-  return {
-    props: { problem, solutions },
-  };
+  try {
+    const problem = await getProblemById(id);
+    if (!problem) return { notFound: true };
+    return { props: { problem, loadError: null } };
+  } catch (error) {
+    console.error('Problem detail load error:', error instanceof Error ? error.message : String(error));
+    res.statusCode = 503;
+    return {
+      props: {
+        problem: null,
+        loadError: '문제 데이터를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      },
+    };
+  }
 };

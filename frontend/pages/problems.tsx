@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GetStaticProps } from 'next';
+import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import { getProblems } from '../lib/catalog';
@@ -16,34 +16,17 @@ interface Problem {
 
 interface ProblemsPageProps {
   problems: Problem[];
+  loadError: string | null;
 }
 
-export default function ProblemsPage({ problems }: ProblemsPageProps) {
+export default function ProblemsPage({ problems, loadError }: ProblemsPageProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('전체');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('전체');
-
-  // 실제 문제들에서 카테고리 목록을 동적으로 생성
-  const categories = ['전체', ...Array.from(new Set(problems.map(p => p.category).filter(Boolean)))];
 
   const filteredProblems = problems.filter(problem => {
-    const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         problem.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === '전체' || problem.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === '전체' || problem.difficulty === selectedDifficulty;
-    
-    return matchesSearch && matchesCategory && matchesDifficulty;
+    return problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      problem.description.toLowerCase().includes(searchTerm.toLowerCase());
   });
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-600 bg-green-50 border-green-200';
-      case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'Hard': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
 
   return (
     <Layout>
@@ -81,6 +64,11 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
           </div>
 
           {/* Problems Grid */}
+          {loadError && (
+            <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-center text-red-700">
+              {loadError}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProblems.map((problem) => (
               <div key={problem.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -121,7 +109,7 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
           </div>
 
           {/* Empty State */}
-          {filteredProblems.length === 0 && (
+          {!loadError && filteredProblems.length === 0 && (
             <div className="text-center py-16">
               <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,18 +126,29 @@ export default function ProblemsPage({ problems }: ProblemsPageProps) {
   );
 }
 
-export const getStaticProps: GetStaticProps<ProblemsPageProps> = async () => {
-  const problems = getProblems().map((problem) => ({
-    id: problem.id,
-    title: problem.title,
-    description: problem.description,
-    difficulty: problem.difficulty,
-    category: problem.category,
-    solved: false,
-    acceptance_rate: 0,
-  }));
+export const getServerSideProps: GetServerSideProps<ProblemsPageProps> = async ({ res }) => {
+  try {
+    const problems = (await getProblems()).map((problem) => ({
+      id: problem.id,
+      title: problem.title,
+      description: problem.description,
+      difficulty: problem.difficulty,
+      category: problem.category,
+      solved: false,
+      acceptance_rate: 0,
+    }));
 
-  return {
-    props: { problems },
-  };
+    return {
+      props: { problems, loadError: null },
+    };
+  } catch (error) {
+    console.error('Problem list load error:', error instanceof Error ? error.message : String(error));
+    res.statusCode = 503;
+    return {
+      props: {
+        problems: [],
+        loadError: '문제 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+      },
+    };
+  }
 };

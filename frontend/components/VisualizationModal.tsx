@@ -401,7 +401,10 @@ function VariableCards({
               )}
             </div>
             {isScalar ? (
-              <span className="min-w-0 break-all font-mono text-sm text-gray-900">{formatValue(state.value)}</span>
+              <span className="flex min-w-0 items-center gap-1 font-mono text-sm text-gray-900">
+                <span className="text-gray-400">=</span>
+                <span className="min-w-0 break-all">{formatValue(state.value)}</span>
+              </span>
             ) : (
               <CollectionValue state={state} changedItems={changedItems} />
             )}
