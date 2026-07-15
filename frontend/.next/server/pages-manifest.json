@@ -8,9 +8,9 @@
   "/api/visualize": "pages/api/visualize.js",
   "/": "pages/index.js",
   "/_document": "pages/_document.js",
-  "/problems": "pages/problems.js",
   "/learn": "pages/learn.js",
-  "/ranking": "pages/ranking.js",
+  "/problems": "pages/problems.js",
   "/problems/[id]": "pages/problems/[id].js",
+  "/ranking": "pages/ranking.js",
   "/404": "pages/404.html"
 }
