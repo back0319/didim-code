@@ -1,1 +1,14 @@
-{}
+{
+  "pages/problems/[id].tsx -> ../../components/MonacoEditor": {
+    "id": 2676,
+    "files": [
+      "static/chunks/676.eebc5f80e553528b.js"
+    ]
+  },
+  "pages/problems/[id].tsx -> ../../components/VisualizationModal": {
+    "id": 9569,
+    "files": [
+      "static/chunks/569.443ac99c670cf6f0.js"
+    ]
+  }
+}

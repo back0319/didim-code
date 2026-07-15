@@ -1,8 +1,16 @@
 {
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
+  "/api/feedback/[submission_id]": "pages/api/feedback/[submission_id].js",
+  "/api/problems": "pages/api/problems.js",
+  "/api/run": "pages/api/run.js",
+  "/api/submit": "pages/api/submit.js",
+  "/api/visualize": "pages/api/visualize.js",
   "/": "pages/index.js",
+  "/_document": "pages/_document.js",
   "/problems": "pages/problems.js",
-  "/api/problems": "pages/api/problems.js"
+  "/learn": "pages/learn.js",
+  "/ranking": "pages/ranking.js",
+  "/problems/[id]": "pages/problems/[id].js",
+  "/404": "pages/404.html"
 }
