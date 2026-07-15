@@ -1,7 +1,9 @@
 import ast
 import bdb
+import builtins
 import io
 import json
+import keyword
 import tokenize
 
 
@@ -229,6 +231,7 @@ class CodeAnalyzer:
             self.tree = None
             return
 
+        self._mark_function_tokens()
         self._collect_statements()
         self._visit_blocks(self.tree, 0)
         collector = CallCollector(code)
@@ -242,16 +245,58 @@ class CodeAnalyzer:
         tokens = {}
         try:
             for token in tokenize.generate_tokens(io.StringIO(self.code).readline):
-                if token.type != tokenize.NAME:
+                if token.type == tokenize.NAME:
+                    if keyword.iskeyword(token.string):
+                        kind = "keyword"
+                    elif hasattr(builtins, token.string):
+                        kind = "builtin"
+                    else:
+                        kind = "identifier"
+                elif token.type == tokenize.STRING:
+                    kind = "string"
+                elif token.type == tokenize.NUMBER:
+                    kind = "number"
+                elif token.type == tokenize.COMMENT:
+                    kind = "comment"
+                elif token.type == tokenize.OP:
+                    kind = "operator"
+                else:
                     continue
                 tokens.setdefault(token.start[0], []).append({
                     "name": token.string,
                     "start": token.start[1],
                     "end": token.end[1],
+                    "kind": kind,
                 })
         except (tokenize.TokenError, IndentationError):
             pass
         return tokens
+
+    def _mark_function_tokens(self):
+        function_positions = set()
+        function_names = {
+            node.name
+            for node in ast.walk(self.tree)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        for node in ast.walk(self.tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                for token in self.tokens_by_line.get(node.lineno, []):
+                    if token["name"] == node.name and token["start"] >= node.col_offset:
+                        function_positions.add((node.lineno, token["start"], token["end"]))
+                        break
+            elif isinstance(node, ast.Call):
+                function = node.func
+                if isinstance(function, ast.Name) and function.id in function_names:
+                    function_positions.add((function.lineno, function.col_offset, function.end_col_offset))
+                elif isinstance(function, ast.Attribute) and function.attr in function_names:
+                    start = function.end_col_offset - len(function.attr)
+                    function_positions.add((function.end_lineno, start, function.end_col_offset))
+
+        for line, line_tokens in self.tokens_by_line.items():
+            for token in line_tokens:
+                if (line, token["start"], token["end"]) in function_positions:
+                    token["kind"] = "function"
 
     @staticmethod
     def _expression(node):
@@ -390,6 +435,7 @@ class FrameTracer(bdb.Bdb):
         self.code_lines = code.split("\n")
         self.analyzer = CodeAnalyzer(code)
         self.output = []
+        self.console_output = []
         self.steps = []
         self.call_tree = []
         self.frame_call_ids = {}
@@ -512,6 +558,8 @@ class FrameTracer(bdb.Bdb):
             "variables_state": global_states if is_module else {**global_states, **local_states},
             "output": "".join(self.output).rstrip("\n"),
             "output_delta": "",
+            "console_output": "".join(self.console_output).rstrip("\n"),
+            "console_delta": "",
             "description": self._description(kind),
             "func_name": "Global frame" if is_module else frame.f_code.co_name,
             "call_id": call_id,
@@ -533,6 +581,7 @@ class FrameTracer(bdb.Bdb):
             "before_local": local_states,
             "before_global": global_states,
             "output_before": "".join(self.output),
+            "console_before": "".join(self.console_output),
             "input_event": None,
             "used_call_orders": set(),
         }
@@ -568,12 +617,17 @@ class FrameTracer(bdb.Bdb):
         output_after = "".join(self.output)
         output_before = pending["output_before"]
         output_delta = output_after[len(output_before):] if output_after.startswith(output_before) else output_after
+        console_after = "".join(self.console_output)
+        console_before = pending["console_before"]
+        console_delta = console_after[len(console_before):] if console_after.startswith(console_before) else console_after
         step.update({
             "phase": "after",
             "variables": global_values if is_module else {**global_values, **local_values},
             "variables_state": global_states if is_module else {**global_states, **local_states},
             "output": output_after.rstrip("\n"),
             "output_delta": output_delta,
+            "console_output": console_after.rstrip("\n"),
+            "console_delta": console_delta,
             "stack_frames": self._stack_frames(frame),
             "globals_vars": global_values,
             "globals_state": global_states,
@@ -686,6 +740,8 @@ class FrameTracer(bdb.Bdb):
             "variables_state": {**global_states, **visible_states(frame.f_locals)},
             "output": "".join(self.output).rstrip("\n"),
             "output_delta": "",
+            "console_output": "".join(self.console_output).rstrip("\n"),
+            "console_delta": "",
             "description": f"함수 '{frame.f_code.co_name}' 호출",
             "func_name": frame.f_code.co_name,
             "call_id": call_id,
@@ -721,6 +777,8 @@ class FrameTracer(bdb.Bdb):
             "variables_state": {**global_states, **local_states},
             "output": "".join(self.output).rstrip("\n"),
             "output_delta": "",
+            "console_output": "".join(self.console_output).rstrip("\n"),
+            "console_delta": "",
             "description": f"{frame.f_code.co_name} 함수가 {encode_value(return_value)!r} 반환",
             "func_name": frame.f_code.co_name,
             "call_id": call_id,
@@ -755,6 +813,8 @@ class FrameTracer(bdb.Bdb):
             "variables_state": {**global_states, **visible_states(frame.f_locals)},
             "output": "".join(self.output).rstrip("\n"),
             "output_delta": "",
+            "console_output": "".join(self.console_output).rstrip("\n"),
+            "console_delta": "",
             "description": f"실행 중 오류 발생: {type(error).__name__}: {error}",
             "func_name": frame.f_code.co_name,
             "call_id": self.frame_call_ids.get(id(frame)),
@@ -782,6 +842,8 @@ class FrameTracer(bdb.Bdb):
             "variables_state": {},
             "output": "",
             "output_delta": "",
+            "console_output": "",
+            "console_delta": "",
             "description": f"문법 오류: {error.msg}",
             "func_name": "Error",
             "call_id": None,
@@ -875,12 +937,15 @@ def main():
         except StopIteration:
             value = ""
         tracer.record_input(prompt, value)
+        tracer.console_output.append(f"{prompt}{value}\n")
         return value
 
     def mock_print(*args, **kwargs):
         separator = kwargs.get("sep", " ")
         ending = kwargs.get("end", "\n")
-        tracer.output.append(separator.join(str(arg) for arg in args) + ending)
+        rendered = separator.join(str(arg) for arg in args) + ending
+        tracer.output.append(rendered)
+        tracer.console_output.append(rendered)
 
     environment = {
         "__builtins__": __builtins__,
@@ -911,6 +976,8 @@ def main():
             "variables_state": {},
             "output": "",
             "output_delta": "",
+            "console_output": "",
+            "console_delta": "",
             "description": "실행할 코드가 없습니다.",
             "func_name": "Global frame",
             "call_id": None,

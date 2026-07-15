@@ -80,6 +80,8 @@ interface Step {
   variables_state?: Record<string, ValueState>;
   output?: string;
   output_delta?: string;
+  console_output?: string;
+  console_delta?: string;
   description?: string;
   stack_frames?: StackFrame[];
   globals_vars?: Record<string, EncodedValue>;
@@ -113,6 +115,7 @@ interface CodeToken {
   name: string;
   start: number;
   end: number;
+  kind?: 'keyword' | 'builtin' | 'function' | 'identifier' | 'string' | 'number' | 'comment' | 'operator';
 }
 
 interface VisualizationData {
@@ -142,6 +145,22 @@ const COLOR_PALETTE = [
   { highlight: 'bg-orange-200 text-orange-950', box: 'border-orange-200 bg-orange-50', text: 'text-orange-900', accent: 'border-orange-500' },
 ] as const;
 
+const FUNCTION_COLOR = {
+  highlight: 'bg-sky-200 text-sky-950',
+  codeHighlight: 'bg-sky-400/20 text-sky-200',
+} as const;
+
+const SYNTAX_COLORS: Record<NonNullable<CodeToken['kind']>, string> = {
+  keyword: 'font-semibold text-fuchsia-300',
+  builtin: 'text-cyan-300',
+  function: FUNCTION_COLOR.codeHighlight,
+  identifier: 'text-gray-300',
+  string: 'text-amber-300',
+  number: 'text-orange-300',
+  comment: 'italic text-gray-500',
+  operator: 'text-gray-400',
+};
+
 const variableColor = (name: string) => {
   let hash = 0;
   for (let index = 0; index < name.length; index += 1) {
@@ -169,12 +188,33 @@ const inferValueState = (value: EncodedValue): ValueState => {
   return { kind: 'scalar', value };
 };
 
-const callSignature = (call: CallTreeNode): string => {
-  const argumentsText = Object.entries(call.arguments)
-    .map(([name, value]) => `${name}=${formatValue(value)}`)
-    .join(', ');
-  return `${call.func_name}(${argumentsText})`;
-};
+function FunctionSignature({
+  funcName,
+  arguments: argumentValues,
+}: {
+  funcName: string;
+  arguments: Record<string, EncodedValue>;
+}) {
+  const entries = Object.entries(argumentValues);
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-center font-mono font-semibold">
+      <span className={`${FUNCTION_COLOR.highlight} rounded px-1`}>{funcName}</span>
+      <span className="text-gray-500">(</span>
+      {entries.map(([name, value], index) => {
+        const colors = variableColor(name);
+        return (
+          <React.Fragment key={name}>
+            {index > 0 && <span className="mr-1 text-gray-500">,</span>}
+            <span className={`${colors.highlight} rounded px-1`}>{name}</span>
+            <span className="text-gray-500">=</span>
+            <span className="text-orange-700">{formatValue(value)}</span>
+          </React.Fragment>
+        );
+      })}
+      <span className="text-gray-500">)</span>
+    </span>
+  );
+}
 
 function InlineIdentifiers({ text, visibleNames }: { text: string; visibleNames: Set<string> }) {
   const parts: React.ReactNode[] = [];
@@ -238,7 +278,13 @@ function TokenizedCodeLine({
   tokens.forEach((token) => {
     if (token.start > cursor) fragments.push(line.slice(cursor, token.start));
     const name = line.slice(token.start, token.end);
-    if (visibleNames.has(token.name)) {
+    if (token.kind === 'function') {
+      fragments.push(
+        <span key={`${token.start}-${token.end}`} className={`${FUNCTION_COLOR.codeHighlight} rounded px-0.5 font-semibold`}>
+          {name}
+        </span>,
+      );
+    } else if (token.kind === 'identifier' && visibleNames.has(token.name)) {
       const colors = variableColor(token.name);
       fragments.push(
         <span key={`${token.start}-${token.end}`} className={`${colors.highlight} rounded px-0.5 font-semibold`}>
@@ -246,7 +292,11 @@ function TokenizedCodeLine({
         </span>,
       );
     } else {
-      fragments.push(name);
+      fragments.push(
+        <span key={`${token.start}-${token.end}`} className={token.kind ? SYNTAX_COLORS[token.kind] : undefined}>
+          {name}
+        </span>,
+      );
     }
     cursor = token.end;
   });
@@ -314,35 +364,47 @@ function VariableCards({
   states,
   changes,
   orderedNames,
+  excludedNames,
 }: {
   values: Record<string, EncodedValue>;
   states?: Record<string, ValueState>;
   changes: VariableChange[];
   orderedNames?: string[];
+  excludedNames?: Set<string>;
 }) {
-  const names = orderedNames?.filter((name) => name !== '__return__' && name in values)
-    ?? Object.keys(values).filter((name) => name !== '__return__');
+  const names = (orderedNames?.filter((name) => name !== '__return__' && name in values)
+    ?? Object.keys(values).filter((name) => name !== '__return__'))
+    .filter((name) => !excludedNames?.has(name));
   if (!names.length) return <p className="text-xs text-gray-400">표시할 변수가 없습니다.</p>;
 
   return (
-    <div className="space-y-2">
+    <div className="flex min-w-0 flex-wrap gap-2">
       {names.map((name) => {
         const state = states?.[name] ?? inferValueState(values[name]);
         const change = changes.find((candidate) => candidate.name === name);
         const changedItems = new Set((change?.items || []).map((item) => String(item.key)));
         const colors = variableColor(name);
+        const isScalar = state.kind === 'scalar';
         return (
           <div
             key={name}
-            className={`min-w-0 rounded-lg border p-2.5 ${colors.box} ${change ? `border-l-4 ${colors.accent}` : ''}`}
+            className={`min-w-0 rounded-lg border border-gray-200 bg-white ${
+              isScalar ? 'flex min-w-[108px] flex-1 items-center gap-2 px-2 py-1.5' : 'w-full p-2.5'
+            } ${change ? 'border-l-4 border-l-amber-400' : ''}`}
           >
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <span className={`break-all font-mono text-sm font-bold ${colors.text}`}>{name}</span>
-              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                {state.kind}
-              </span>
+            <div className={`flex min-w-0 items-center gap-2 ${isScalar ? '' : 'justify-between'}`}>
+              <span className={`${colors.highlight} break-all rounded px-1 font-mono text-sm font-bold`}>{name}</span>
+              {!isScalar && (
+                <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                  {state.kind}
+                </span>
+              )}
             </div>
-            <CollectionValue state={state} changedItems={changedItems} />
+            {isScalar ? (
+              <span className="min-w-0 break-all font-mono text-sm text-gray-900">{formatValue(state.value)}</span>
+            ) : (
+              <CollectionValue state={state} changedItems={changedItems} />
+            )}
             {!!state.truncated_count && state.truncated_count > 0 && (
               <p className="mt-1 text-[10px] text-gray-500">외 {state.truncated_count}개</p>
             )}
@@ -356,7 +418,7 @@ function VariableCards({
 function BindingRows({ bindings, visibleNames }: { bindings: CallBinding[]; visibleNames: Set<string> }) {
   if (!bindings.length) return null;
   return (
-    <div className="mt-2 space-y-1 rounded-md border border-indigo-100 bg-white/80 p-2">
+    <div className="mt-2 space-y-1 rounded-md border border-gray-200 bg-gray-50/80 p-2">
       {bindings.map((binding, index) => {
         const parameterColors = variableColor(binding.parameter);
         return (
@@ -451,9 +513,17 @@ export default function VisualizationModal({
     return names;
   }, [step]);
 
-  const frameTitle = (frame: StackFrame): string => {
+  const frameArguments = (frame: StackFrame): Record<string, EncodedValue> => {
     const call = typeof frame.call_id === 'number' ? callsById.get(frame.call_id) : undefined;
-    return call ? callSignature(call) : `${frame.func_name}()`;
+    if (!call) return {};
+    return Object.fromEntries(
+      Object.entries(call.arguments).map(([name, initialValue]) => [
+        name,
+        Object.prototype.hasOwnProperty.call(frame.encoded_locals, name)
+          ? frame.encoded_locals[name]
+          : initialValue,
+      ]),
+    );
   };
 
   const latestControlStep = (block: CodeBlock): Step | undefined => {
@@ -469,11 +539,8 @@ export default function VisualizationModal({
     if (typeof call.error_step === 'number' && call.error_step <= currentStep) {
       return { label: '오류', className: 'border-red-300 bg-red-50 text-red-900' };
     }
-    if (call.call_step > currentStep) {
-      return { label: '다음 호출', className: 'border-dashed border-gray-300 bg-gray-50 text-gray-500' };
-    }
     if (call.id === currentCallId) {
-      return { label: '실행 중', className: 'border-indigo-500 bg-indigo-50 text-indigo-950' };
+      return { label: '실행 중', className: 'border-amber-400 bg-amber-50 text-amber-950' };
     }
     if (activeCallIds.has(call.id)) {
       return { label: '하위 호출 대기', className: 'border-amber-300 bg-amber-50 text-amber-950' };
@@ -499,19 +566,21 @@ export default function VisualizationModal({
     const currentFrame = activeFrames[activeFrames.length - 1];
     const currentBlocks = (step.current_blocks || []).filter((block) => block.type !== 'function');
     const functionBlock = (step.current_blocks || []).find((block) => block.type === 'function');
-    const title = currentFrame ? frameTitle(currentFrame) : functionBlock ? `${functionBlock.expression} 정의` : '전역 코드';
+    const title = currentFrame ? (
+      <FunctionSignature funcName={currentFrame.func_name} arguments={frameArguments(currentFrame)} />
+    ) : functionBlock ? `${functionBlock.expression} 정의` : '전역 코드';
     const stepChanges = step.changes || [];
 
     return (
       <section aria-labelledby="current-flow-title" className="space-y-3">
         <h4 id="current-flow-title" className="text-sm font-semibold text-gray-900">현재 실행 흐름</h4>
-        <div className="min-w-0 rounded-lg border border-indigo-300 bg-indigo-50 p-3">
+        <div className="min-w-0 rounded-lg border border-amber-400 bg-amber-50 p-3 ring-1 ring-amber-200">
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 rounded bg-indigo-600 px-2 py-0.5 font-mono text-xs font-bold text-white">def</span>
-              <span className="break-all font-mono text-sm font-semibold text-indigo-950">{title}</span>
+              <span className="shrink-0 rounded bg-fuchsia-600 px-2 py-0.5 font-mono text-xs font-bold text-white">def</span>
+              <span className="break-all font-mono text-sm font-semibold text-gray-950">{title}</span>
             </div>
-            <span className="rounded border border-indigo-200 bg-white px-2 py-1 text-xs font-medium text-indigo-700">
+            <span className="rounded border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-amber-800">
               {step.description || '코드 실행'}
             </span>
           </div>
@@ -520,7 +589,7 @@ export default function VisualizationModal({
           )}
 
           {currentBlocks.length > 0 && (
-            <div className="mt-3 space-y-2 border-l-2 border-indigo-200 pl-3">
+            <div className="mt-3 space-y-2 border-l-2 border-amber-300 pl-3">
               {currentBlocks.map((block) => {
                 const controlStep = latestControlStep(block);
                 const isCondition = block.type === 'if_block';
@@ -596,8 +665,8 @@ export default function VisualizationModal({
     if (!focusCall) return null;
     const focusParentId = focusCall.parent_id ?? focusCall.id;
     const relatedCalls = focusParentId === null
-      ? allCalls.filter((call) => call.parent_id === null)
-      : allCalls.filter((call) => call.parent_id === focusParentId);
+      ? startedCalls.filter((call) => call.parent_id === null)
+      : startedCalls.filter((call) => call.parent_id === focusParentId);
 
     return (
       <section aria-labelledby="call-flow-title" className="space-y-3 border-t border-gray-200 pt-4">
@@ -611,7 +680,9 @@ export default function VisualizationModal({
               const status = callStatus(call);
               return (
                 <div key={call.id} className={`min-w-0 rounded-lg border p-2.5 ${status.className}`}>
-                  <div className="break-all font-mono text-xs font-bold">{callSignature(call)}</div>
+                  <div className="break-all text-xs font-bold">
+                    <FunctionSignature funcName={call.func_name} arguments={call.arguments} />
+                  </div>
                   <div className="mt-1 text-[11px] font-semibold">{status.label}</div>
                   {call.call_site?.bindings && (
                     <BindingRows bindings={call.call_site.bindings} visibleNames={visibleNames} />
@@ -621,7 +692,7 @@ export default function VisualizationModal({
             })}
           </div>
         )}
-        <details className="rounded-lg border border-gray-200 bg-white">
+        <details open className="rounded-lg border border-gray-200 bg-white">
           <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-gray-700">전체 호출 기록</summary>
           <div className="max-h-72 space-y-1 overflow-y-auto border-t border-gray-100 p-2">
             {startedCalls.map((call) => {
@@ -630,12 +701,14 @@ export default function VisualizationModal({
               return (
                 <div
                   key={call.id}
-                  className="min-w-0 border-l-2 border-gray-200 py-1 pl-2"
+                  className={`min-w-0 rounded border-l-2 px-2 py-1 ${status.className}`}
                   style={{ marginLeft: `${Math.min(depth, 4) * 10}px` }}
                 >
                   <div className="flex min-w-0 items-start justify-between gap-2">
-                    <span className="break-all font-mono text-[11px] font-semibold text-gray-800">{callSignature(call)}</span>
-                    <span className="shrink-0 text-[10px] font-medium text-gray-500">{status.label}</span>
+                    <span className="break-all text-[11px] font-semibold">
+                      <FunctionSignature funcName={call.func_name} arguments={call.arguments} />
+                    </span>
+                    <span className="shrink-0 text-[10px] font-medium">{status.label}</span>
                   </div>
                 </div>
               );
@@ -694,45 +767,53 @@ export default function VisualizationModal({
                 </div>
                 <div className="h-[calc(100%-45px)] space-y-4 overflow-y-auto overflow-x-hidden p-3">
                   {Object.keys(step.globals_vars || {}).length > 0 && (
-                    <div>
-                      <h4 className="mb-2 text-xs font-semibold text-gray-500">전역 변수</h4>
-                      <VariableCards
-                        values={step.globals_vars || {}}
-                        states={step.globals_state}
-                        changes={(step.changes || []).filter((change) => change.scope === 'global')}
-                      />
+                    <div className="flex min-w-0 items-start gap-2">
+                      <h4 className="w-20 shrink-0 whitespace-nowrap pt-2 text-xs font-semibold text-gray-500">전역 변수</h4>
+                      <div className="min-w-0 flex-1">
+                        <VariableCards
+                          values={step.globals_vars || {}}
+                          states={step.globals_state}
+                          changes={(step.changes || []).filter((change) => change.scope === 'global')}
+                        />
+                      </div>
                     </div>
                   )}
 
                   {activeFrames.length > 0 && (
-                    <div>
-                      <h4 className="mb-2 text-xs font-semibold text-gray-500">함수 호출 스택</h4>
-                      <div className="space-y-2">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <h4 className="w-20 shrink-0 whitespace-nowrap pt-2 text-xs font-semibold text-gray-500">함수 호출 스택</h4>
+                      <div className="min-w-0 flex-1 space-y-2">
                         {activeFrames.map((frame, index) => {
                           const isCurrent = index === activeFrames.length - 1;
                           const call = typeof frame.call_id === 'number' ? callsById.get(frame.call_id) : undefined;
+                          const parameterNames = new Set(Object.keys(call?.arguments || {}));
                           const localChanges = (step.changes || []).filter(
                             (change) => change.scope === 'local' && change.call_id === frame.call_id,
                           );
                           return (
                             <div key={`${frame.call_id || frame.func_name}-${index}`} className={`min-w-0 rounded-lg border p-2.5 ${
-                              isCurrent ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white'
+                              isCurrent ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-200' : 'border-gray-200 bg-white'
                             }`}>
-                              <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-                                <span className="break-all font-mono text-xs font-bold text-gray-900">{frameTitle(frame)}</span>
-                                {isCurrent && <span className="shrink-0 rounded bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white">현재</span>}
+                              <div className="flex min-w-0 items-center justify-between gap-2">
+                                <span className="break-all text-xs font-bold text-gray-900">
+                                  <FunctionSignature funcName={frame.func_name} arguments={frameArguments(frame)} />
+                                </span>
+                                {isCurrent && <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">현재</span>}
                               </div>
                               {call?.call_site?.bindings && (
                                 <BindingRows bindings={call.call_site.bindings} visibleNames={visibleNames} />
                               )}
-                              <div className="mt-2">
+                              {Object.keys(frame.encoded_locals || {}).some((name) => !parameterNames.has(name)) && (
+                                <div className="mt-2">
                                 <VariableCards
                                   values={frame.encoded_locals || {}}
                                   states={frame.local_states}
                                   changes={localChanges}
                                   orderedNames={frame.ordered_varnames}
+                                  excludedNames={parameterNames}
                                 />
-                              </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -782,10 +863,10 @@ export default function VisualizationModal({
                 <div className="border-t border-gray-800 bg-gray-950">
                   <div className="border-b border-gray-800 px-4 py-2 text-xs font-semibold text-gray-400">출력</div>
                   <div className="max-h-32 min-h-16 overflow-y-auto p-4">
-                    {step.output ? (
-                      <pre className="whitespace-pre-wrap font-mono text-sm text-emerald-400">{step.output}</pre>
+                    {(step.console_output ?? step.output) ? (
+                      <pre className="whitespace-pre-wrap font-mono text-sm text-emerald-400">{step.console_output ?? step.output}</pre>
                     ) : (
-                      <p className="text-xs text-gray-600">아직 출력이 없습니다.</p>
+                      <p className="text-xs text-gray-600">아직 입력이나 출력이 없습니다.</p>
                     )}
                   </div>
                 </div>
