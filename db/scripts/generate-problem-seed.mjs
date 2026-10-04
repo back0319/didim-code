@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const supabaseDirectory = path.resolve(scriptDirectory, '..');
-const sourcePath = path.join(supabaseDirectory, 'seed-data', 'problems.json');
+const dbDirectory = path.resolve(scriptDirectory, '..');
+const sourcePath = path.join(dbDirectory, 'seed-data', 'problems.json');
 const migrationPath = process.argv[2];
 
 if (!migrationPath) {
@@ -39,7 +39,7 @@ for (const problem of problems) {
 }
 
 const lines = [
-  '-- 이 파일은 supabase/seed-data/problems.json에서 생성됩니다.',
+  '-- 이 파일은 db/seed-data/problems.json에서 생성됩니다.',
   '-- npm run data:seed-sql --prefix frontend 명령으로 다시 만들 수 있습니다.',
   '',
   'delete from public.problem_feedback_configs;',

@@ -13,11 +13,12 @@
     "test": "npm run test:judge",
     "test:judge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --experimental-strip-types lib/*.test.ts",
     "data:convert": "ruby scripts/convert-csv.rb",
-    "data:seed-sql": "node ../supabase/scripts/generate-problem-seed.mjs ../supabase/migrations/20260715013024_seed_beginner_problems.sql"
+    "data:seed-sql": "node ../db/scripts/generate-problem-seed.mjs ../db/migrations/20260715013024_seed_beginner_problems.sql",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "@supabase/supabase-js": "^2.110.5",
+    "@neondatabase/serverless": "^1.2.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

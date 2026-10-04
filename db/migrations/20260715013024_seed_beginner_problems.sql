@@ -1,4 +1,4 @@
--- 이 파일은 supabase/seed-data/problems.json에서 생성됩니다.
+-- 이 파일은 db/seed-data/problems.json에서 생성됩니다.
 -- npm run data:seed-sql --prefix frontend 명령으로 다시 만들 수 있습니다.
 
 delete from public.problem_feedback_configs;
