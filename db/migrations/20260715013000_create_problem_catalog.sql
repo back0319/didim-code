@@ -12,7 +12,6 @@ create table public.problems (
   starter_code text not null,
   status text not null default 'draft' check (status in ('draft', 'review', 'published', 'archived')),
   source text not null default 'seed' check (source in ('seed', 'user', 'generated')),
-  created_by uuid references auth.users(id) on delete set null,
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -52,44 +51,6 @@ create table public.problem_feedback_configs (
 create index problems_status_display_order_idx on public.problems(status, display_order);
 create index problem_test_cases_problem_sample_order_idx
   on public.problem_test_cases(problem_id, is_sample, case_order);
-
-alter table public.problems enable row level security;
-alter table public.problem_test_cases enable row level security;
-alter table public.problem_solutions enable row level security;
-alter table public.problem_feedback_configs enable row level security;
-
-revoke all on public.problems from anon, authenticated;
-revoke all on public.problem_test_cases from anon, authenticated;
-revoke all on public.problem_solutions from anon, authenticated;
-revoke all on public.problem_feedback_configs from anon, authenticated;
-
-grant select on public.problems to anon, authenticated;
-grant select on public.problem_test_cases to anon, authenticated;
-grant all on public.problems to service_role;
-grant all on public.problem_test_cases to service_role;
-grant all on public.problem_solutions to service_role;
-grant all on public.problem_feedback_configs to service_role;
-grant usage, select on all sequences in schema public to service_role;
-
-create policy "published problems are publicly readable"
-  on public.problems
-  for select
-  to anon, authenticated
-  using (status = 'published');
-
-create policy "published sample cases are publicly readable"
-  on public.problem_test_cases
-  for select
-  to anon, authenticated
-  using (
-    is_sample
-    and exists (
-      select 1
-      from public.problems
-      where problems.id = problem_test_cases.problem_id
-        and problems.status = 'published'
-    )
-  );
 
 comment on table public.problems is 'DidimCode 문제 원문과 공개 메타데이터';
 comment on table public.problem_test_cases is '공개 예시와 서버 전용 숨은 채점 케이스';

@@ -7,8 +7,8 @@
 ```mermaid
 flowchart LR
     A["Browser"] --> B["Vercel<br/>Next.js"]
-    B --> C["Supabase<br/>공개 문제"]
-    B --> D["Supabase<br/>숨은 테스트"]
+    B --> C["Neon Postgres<br/>공개 문제"]
+    B --> D["Neon Postgres<br/>숨은 테스트"]
     B --> E["Vercel Sandbox<br/>Python 실행"]
     E --> F["실행 trace와 판정"]
     F --> B
@@ -16,14 +16,14 @@ flowchart LR
     B --> A
 ```
 
-브라우저 요청은 Next.js page와 API route가 함께 처리합니다. 서버 API만 Supabase의 숨은 채점 데이터, Vercel Sandbox와 OpenAI API에 접근하며 브라우저에는 필요한 결과만 반환합니다.
+브라우저 요청은 Next.js page와 API route가 함께 처리합니다. 데이터베이스는 서버에서만 접속하며 서버 API만 숨은 채점 데이터, Vercel Sandbox와 OpenAI API에 접근하며 브라우저에는 필요한 결과만 반환합니다.
 
 ## 요구 환경
 
 - Node.js 24.x
 - npm
 - Vercel 프로젝트와 Sandbox 사용 권한
-- Supabase 프로젝트
+- Neon Postgres 프로젝트
 - OpenAI API key
 
 ## 로컬 실행
@@ -44,14 +44,11 @@ npm run dev
 
 | 변수 | 공개 범위 | 설명 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser | Supabase 프로젝트 URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser | 공개 문제를 읽는 publishable key |
-| `SUPABASE_SECRET_KEY` | Secret | 숨은 테스트와 서버 전용 데이터 접근 |
-| `CRON_SECRET` | Secret | Vercel Cron 요청을 인증하는 서버 전용 무작위 값 |
+| `DATABASE_URL` | Secret | 읽기 전용 `didim_app` role의 Neon pooled 연결 문자열 |
 | `OPENAI_API_KEY` | Secret | 힌트 생성 API key |
 | `OPENAI_MODEL` | Server only | 사용할 모델의 선택적 override |
 
-`SUPABASE_SECRET_KEY`, `CRON_SECRET`, `OPENAI_API_KEY`는 Next.js API route에서만 읽고 브라우저 번들이나 Git 기록에 포함하지 않습니다.
+`DATABASE_URL`, `OPENAI_API_KEY`는 Next.js API route에서만 읽고 브라우저 번들이나 Git 기록에 포함하지 않습니다.
 
 ## 검증과 빌드
 
@@ -65,7 +62,7 @@ npm run build
 
 실제 실행 경로는 다음을 추가로 확인합니다.
 
-1. 공개 문제 목록이 publishable key로 조회되는지 확인합니다.
+1. 공개 문제 목록이 `DATABASE_URL`로 조회되는지 확인합니다.
 2. `/api/run`이 제출 코드를 Sandbox에서 실행하고 정리하는지 확인합니다.
 3. `/api/visualize`가 실행 trace를 반환하는지 확인합니다.
 4. `/api/submit`이 숨은 테스트를 서버에서만 읽고 판정을 반환하는지 확인합니다.
@@ -73,9 +70,10 @@ npm run build
 
 ## 문제 데이터와 마이그레이션
 
-- 문제 원본: [supabase/seed-data/problems.json](../supabase/seed-data/problems.json)
-- 스키마와 seed: [supabase/migrations](../supabase/migrations)
-- seed 생성기: [supabase/scripts/generate-problem-seed.mjs](../supabase/scripts/generate-problem-seed.mjs)
+- 문제 원본: [db/seed-data/problems.json](../db/seed-data/problems.json)
+- 스키마와 seed: [db/migrations](../db/migrations)
+- seed 생성기: [db/scripts/generate-problem-seed.mjs](../db/scripts/generate-problem-seed.mjs)
+- migration 실행기: [frontend/scripts/migrate.mjs](../frontend/scripts/migrate.mjs)
 
 문제 원본을 수정한 뒤 SQL을 다시 생성합니다.
 
@@ -84,7 +82,14 @@ cd frontend
 npm run data:seed-sql
 ```
 
-생성된 migration을 검토한 뒤 Supabase에 적용합니다. 공개 문제와 예시는 클라이언트가 읽을 수 있지만 숨은 테스트, 모범 답안과 피드백 설정은 서버 전용 정책을 유지해야 합니다.
+생성된 migration을 검토한 뒤 Neon에 적용합니다. migration은 스키마 소유자(`neondb_owner`)의 direct 연결로 실행하며, 적용 이력은 `public.schema_migrations`에 기록됩니다.
+
+```bash
+cd frontend
+MIGRATION_DATABASE_URL='postgresql://neondb_owner:...@ep-....neon.tech/neondb?sslmode=require' npm run db:migrate
+```
+
+앱 런타임은 `didim_app` role로 접속합니다. 이 role은 `problems`, `problem_test_cases`, `problem_feedback_configs`의 `SELECT` 권한만 가지며 모범 답안(`problem_solutions`) 조회, 쓰기와 DDL은 거부됩니다. 비밀번호를 교체할 때는 소유자 연결에서 `alter role didim_app with login password '...'`를 실행한 뒤 Vercel의 `DATABASE_URL`을 함께 갱신합니다. 공개 문제와 예시만 브라우저 응답에 포함하고 숨은 테스트와 피드백 설정은 서버 API 안에서만 사용합니다.
 
 ## Vercel 배포
 
@@ -98,20 +103,13 @@ Vercel Git integration이 `main`의 Production build를 수행합니다. 현재 
 
 Vercel Project Settings에는 다음을 등록합니다.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY`
-- `CRON_SECRET`
+- `DATABASE_URL`
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`(선택)
 
-Preview와 Production의 Supabase 데이터를 분리하지 않는 경우 Preview에서도 숨은 문제 데이터가 변경되지 않도록 서버 API의 쓰기 경로와 key 범위를 점검합니다.
+Preview와 Production은 같은 Neon 데이터베이스를 읽기 전용 role로 사용하므로 Preview 배포가 문제 데이터를 변경할 수 없습니다.
 
-### Supabase keepalive Cron
-
-`frontend/vercel.json`은 매일 `03:00 UTC`에 `/api/cron/supabase-keepalive`를 호출합니다. 이 API는 Vercel이 `CRON_SECRET`으로 생성한 Bearer 인증을 확인한 뒤 공개 `problems` 테이블에서 게시된 문제 ID 하나만 읽습니다. 성공 응답은 데이터 없이 `{ "ok": true }`만 반환합니다.
-
-Cron은 Production 배포에서만 실행됩니다. Vercel Project Settings의 Production 환경에 32바이트 이상의 무작위 `CRON_SECRET`을 등록하고, Vercel Cron 목록과 Function 로그에서 실행 결과를 확인합니다. 이 작업은 Free 프로젝트의 활동을 유지하기 위한 운영 보조 장치이며 비정지 SLA를 제공하지 않습니다.
+Neon 프로젝트는 `aws-ap-southeast-1`(싱가포르)에 있고 Vercel Function은 `icn1`(서울)에서 실행됩니다. Neon compute는 유휴 시 자동으로 일시 중지되고 다음 요청에서 다시 시작되므로 별도의 keepalive Cron이 필요하지 않습니다. 일시 중지 후 첫 요청은 compute 재시작 시간만큼 느릴 수 있습니다.
 
 ## 배포 후 점검
 
@@ -125,8 +123,8 @@ Cron은 Production 배포에서만 실행됩니다. Vercel Project Settings의 P
 ## 운영 제약과 장애 대응
 
 - Sandbox 실행 실패 시 Vercel 권한, 런타임 제한과 API 로그를 확인합니다.
-- 문제 목록 오류는 Supabase URL, publishable key와 공개 정책을 확인합니다.
-- 제출 오류는 secret key와 숨은 데이터 정책을 확인하되 secret을 클라이언트 key로 대체하지 않습니다.
+- 문제 목록·제출 오류는 `DATABASE_URL`, `didim_app` role 권한과 Neon compute 상태를 확인합니다.
+- `DATABASE_URL`에 소유자 role을 넣어 권한 문제를 우회하지 않습니다.
 - AI 힌트 오류는 OpenAI key, 모델 override와 API 응답을 확인합니다.
 - 문제가 있는 배포는 Vercel의 이전 정상 배포를 Production으로 승격합니다.
 

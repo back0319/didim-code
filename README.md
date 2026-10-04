@@ -40,10 +40,10 @@ DidimCode는 실행 상태를 관찰할 수 있게 만들고, 실제 채점 결�
 
 ```mermaid
 flowchart LR
-    P["Supabase 공개 문제"] --> A["문제 선택 · Monaco Editor"]
+    P["Neon 공개 문제"] --> A["문제 선택 · Monaco Editor"]
     A --> B["Next.js 서버 API"]
     subgraph S["브라우저에서 직접 접근하지 않는 처리"]
-        B --> C["Supabase 숨은 테스트"]
+        B --> C["Neon 숨은 테스트"]
         B --> D["Vercel Sandbox"]
         D --> E["AC · WA · CE · RE · TLE"]
         E --> F["실행 단계 시각화"]
@@ -65,7 +65,7 @@ flowchart LR
 
 ## 현재 프로덕션과 연구 자산
 
-현재 서비스는 `frontend`의 Next.js 15 애플리케이션을 중심으로 Monaco Editor, Vercel Sandbox, Supabase와 OpenAI API를 사용합니다.
+현재 서비스는 `frontend`의 Next.js 15 애플리케이션을 중심으로 Monaco Editor, Vercel Sandbox, Neon Postgres와 OpenAI API를 사용합니다.
 
 루트의 `backend`, Docker Compose와 DMOJ 관련 문서는 FastAPI·DMOJ 기반 초기 연구 프로토타입의 자산입니다. 현재 Production의 실행·채점 경로와 구분하며, 새로운 배포 설명은 [build-and-deploy](docs/build-and-deploy.md)를 기준으로 합니다.
 
@@ -73,7 +73,7 @@ flowchart LR
 
 - ESLint와 Next.js production build로 프론트엔드와 서버 API를 검증합니다.
 - 문제 원본에서 seed SQL을 재생성해 데이터 변경의 재현성을 확인합니다.
-- Supabase migration은 공개 문제와 숨은 채점 데이터의 읽기 권한을 분리합니다.
+- 앱 런타임은 읽기 전용 Postgres role로 접속해 모범 답안 조회와 데이터 변경을 차단합니다.
 
 현재는 Python 문제를 중심으로 제공하며 Sandbox의 실행 시간과 리소스 제한을 적용합니다. 생성형 AI 힌트는 같은 제출에도 표현이 달라질 수 있습니다. 실제 사용자 평가 결과는 검증된 표본과 분석이 확보되기 전까지 성과로 제시하지 않습니다.
 
@@ -84,7 +84,7 @@ flowchart LR
 | Web | Next.js 15, React, TypeScript, Tailwind CSS |
 | Editor | Monaco Editor |
 | Execution | Vercel Sandbox, Python |
-| Data | Supabase Postgres |
+| Data | Neon Postgres |
 | AI | OpenAI API |
 | Delivery | Vercel |
 
